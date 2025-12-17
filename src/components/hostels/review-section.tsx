@@ -84,7 +84,7 @@ function ReviewCard({ review }: { review: Review }) {
         </div>
         <p className="text-sm">{review.text}</p>
         
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm pt-2">
+        <div className="grid grid-cols-1 gap-y-1 text-sm pt-2">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[0].icon} {ratingCategories[0].label}</span>
             <StarRating rating={review.foodRating} readOnly size={14} />
