@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -19,6 +19,9 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -40,9 +43,38 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
+  const [emailLink, setEmailLink] = useState('');
   const auth = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    const completeSignIn = async () => {
+        if (auth && isSignInWithEmailLink(auth, window.location.href)) {
+            let emailForSignIn = window.localStorage.getItem('emailForSignIn');
+            if (!emailForSignIn) {
+                // User opened the link on a different device. To prevent session fixation
+                // attacks, ask the user to provide the email again.
+                emailForSignIn = window.prompt('Please provide your email for confirmation');
+            }
+            if(emailForSignIn) {
+                try {
+                    await signInWithEmailLink(auth, emailForSignIn, window.location.href);
+                    window.localStorage.removeItem('emailForSignIn');
+                    toast({ title: "Signed in successfully!" });
+                    router.push('/hostels');
+                } catch (error: any) {
+                    toast({
+                        variant: "destructive",
+                        title: "Sign-in failed.",
+                        description: error.message,
+                    });
+                }
+            }
+        }
+    };
+    completeSignIn();
+  }, [auth, router, toast]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +123,36 @@ export default function LoginPage() {
       });
     }
   };
+  
+  const handleEmailLinkSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) return;
+
+    const actionCodeSettings = {
+        // URL you want to redirect back to. The domain (www.example.com) must be
+        // in the authorized domains list in the Firebase Console.
+        url: window.location.href, // Redirect back to the login page to complete sign-in
+        handleCodeInApp: true,
+      };
+
+    try {
+      await sendSignInLinkToEmail(auth, emailLink, actionCodeSettings);
+      // The link was successfully sent. Inform the user.
+      // Save the email locally so you don't need to ask the user for it again
+      // if they open the link on the same device.
+      window.localStorage.setItem('emailForSignIn', emailLink);
+      toast({
+        title: 'Check your email',
+        description: `A sign-in link has been sent to ${emailLink}.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Could not send sign-in link',
+        description: error.message,
+      });
+    }
+  };
 
   return (
     <div className="w-full max-w-md">
@@ -102,9 +164,10 @@ export default function LoginPage() {
           <p className="text-muted-foreground">Sign in to find your next stay</p>
         </div>
       <Tabs defaultValue="signin" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="signin">Sign In</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          <TabsTrigger value="emaillink">Email Link</TabsTrigger>
         </TabsList>
         <TabsContent value="signin">
           <Card>
@@ -189,6 +252,34 @@ export default function LoginPage() {
                 <GoogleIcon className="mr-2 h-5 w-5" />
                 Sign up with Google
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="emaillink">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sign in with Email</CardTitle>
+              <CardDescription>
+                We'll send a magic link to your email. No password needed.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form onSubmit={handleEmailLinkSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email-link">Email</Label>
+                  <Input
+                    id="email-link"
+                    type="email"
+                    placeholder="m@example.com"
+                    required
+                    value={emailLink}
+                    onChange={(e) => setEmailLink(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Send Sign-In Link
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
