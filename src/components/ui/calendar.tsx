@@ -2,10 +2,18 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import { DayPicker, useDayPicker, useNavigation } from "react-day-picker"
+import { format } from "date-fns"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
@@ -24,6 +32,7 @@ function Calendar({
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
+        caption_dropdowns: "flex justify-center gap-1",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
@@ -54,6 +63,74 @@ function Calendar({
         ...classNames,
       }}
       components={{
+        Dropdown: ({ ...props }) => {
+          const { fromDate, fromMonth, fromYear, toDate, toMonth, toYear } =
+            useDayPicker()
+          const { goToMonth, month } = useNavigation()
+          if (props.name === "months") {
+            const months = Array.from({ length: 12 }, (_, i) => i)
+            return (
+              <Select
+                onValueChange={(newValue) => {
+                  const newDate = new Date(month)
+                  newDate.setMonth(parseInt(newValue))
+                  goToMonth(newDate)
+                }}
+                value={String(month.getMonth())}
+              >
+                <SelectTrigger>{format(month, "MMMM")}</SelectTrigger>
+                <SelectContent>
+                  {months.map((m) => (
+                    <SelectItem
+                      key={m}
+                      value={String(m)}
+                      disabled={
+                        (fromMonth &&
+                          new Date(month.getFullYear(), m) <
+                            new Date(fromMonth.getFullYear(), fromMonth.getMonth())) ||
+                        (toMonth &&
+                          new Date(month.getFullYear(), m) >
+                            new Date(toMonth.getFullYear(), toMonth.getMonth())) ||
+                        false
+                      }
+                    >
+                      {format(new Date(month.getFullYear(), m), "MMMM")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )
+          } else if (props.name === "years") {
+            const years: number[] = []
+            const first = fromYear || 1900
+            const last = toYear || new Date().getFullYear()
+            for (let i = first; i <= last; i++) {
+              years.push(i)
+            }
+            years.sort((a, b) => b - a)
+
+            return (
+              <Select
+                onValueChange={(newValue) => {
+                  const newDate = new Date(month)
+                  newDate.setFullYear(parseInt(newValue))
+                  goToMonth(newDate)
+                }}
+                value={String(month.getFullYear())}
+              >
+                <SelectTrigger>{month.getFullYear()}</SelectTrigger>
+                <SelectContent>
+                  {years.map((y) => (
+                    <SelectItem key={y} value={String(y)}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )
+          }
+          return null
+        },
         IconLeft: ({ className, ...props }) => (
           <ChevronLeft className={cn("h-4 w-4", className)} {...props} />
         ),
