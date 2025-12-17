@@ -45,7 +45,7 @@ const reviewSchema = z.object({
   cleanlinessRating: z.number().min(1, "Rating is required.").max(5),
   managementRating: z.number().min(1, "Rating is required.").max(5),
   safetyRating: z.number().min(1, "Rating is required.").max(5),
-  picture: z.instanceof(FileList).optional(),
+  picture: z.any().optional(),
 });
 
 const ratingCategories = [
