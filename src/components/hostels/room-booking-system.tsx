@@ -15,6 +15,7 @@ import { Button } from "../ui/button";
 import { useState } from "react";
 import { Room } from "@/lib/types";
 import { Bed, Ban, CheckCircle, HelpCircle } from "lucide-react";
+import { format } from "date-fns";
 
 interface RoomBookingSystemProps {
   hostel: Hostel;
@@ -117,12 +118,18 @@ export function RoomBookingSystem({ hostel }: RoomBookingSystemProps) {
               <span className="font-semibold">{hostel.name}</span>.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-2">
             <p>
               <span className="font-semibold">Rent:</span> ₹{hostel.feeStructure.rent.toLocaleString()}/month
             </p>
             <p>
               <span className="font-semibold">Deposit:</span> ₹{hostel.feeStructure.deposit.toLocaleString()} (one-time)
+            </p>
+            <p>
+              <span className="font-semibold">Registration Fee:</span> ₹{hostel.feeStructure.registration.fee.toLocaleString()} (one-time)
+            </p>
+            <p className="text-sm text-muted-foreground pt-2">
+              Registration Deadline: {format(new Date(hostel.feeStructure.registration.deadline), "MMMM dd, yyyy")}
             </p>
           </div>
           <DialogFooter>

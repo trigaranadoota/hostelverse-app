@@ -36,6 +36,10 @@ export type Hostel = {
     rent: number;
     deposit: number;
     includes: string[];
+    registration: {
+      fee: number;
+      deadline: string;
+    };
   };
   verification: {
     ai: boolean;

@@ -28,6 +28,10 @@ export const hostels: Hostel[] = [
       rent: 5000,
       deposit: 10000,
       includes: ['Wi-Fi', 'Water', 'Electricity'],
+      registration: {
+        fee: 100,
+        deadline: '2024-08-31',
+      }
     },
     verification: { ai: true, human: true },
     reviews: [
@@ -79,6 +83,10 @@ export const hostels: Hostel[] = [
       rent: 8000,
       deposit: 15000,
       includes: ['Wi-Fi', 'AC', 'Housekeeping'],
+      registration: {
+        fee: 100,
+        deadline: '2024-08-31',
+      }
     },
     verification: { ai: true, human: false },
     reviews: [
@@ -121,6 +129,10 @@ export const hostels: Hostel[] = [
       rent: 6500,
       deposit: 12000,
       includes: ['Wi-Fi', 'Parking'],
+      registration: {
+        fee: 100,
+        deadline: '2024-08-31',
+      }
     },
     verification: { ai: false, human: false },
     reviews: [],
