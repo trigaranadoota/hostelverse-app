@@ -1,0 +1,27 @@
+"use client";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Globe } from "lucide-react";
+
+export function LanguageSwitcher() {
+  return (
+    <Select defaultValue="en">
+      <SelectTrigger className="w-auto h-9 gap-2">
+        <Globe className="w-4 h-4" />
+        <SelectValue placeholder="Language" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="en">English</SelectItem>
+        <SelectItem value="es">Español</SelectItem>
+        <SelectItem value="fr">Français</SelectItem>
+        <SelectItem value="de">Deutsch</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}

@@ -1,14 +1,13 @@
 {
   "entities": {
     "UserProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "UserProfile",
+      "title": "User Profile",
       "type": "object",
       "description": "Represents a user's profile in the application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user profile."
+          "description": "Unique identifier for the user profile, matching the Firebase Auth UID."
         },
         "firstName": {
           "type": "string",
@@ -25,19 +24,13 @@
         },
         "preferredLanguage": {
           "type": "string",
-          "description": "User's preferred language."
+          "description": "User's preferred language for the application interface.",
+          "enum": ["en", "es", "fr", "de"]
         }
       },
-      "required": [
-        "id",
-        "firstName",
-        "lastName",
-        "email",
-        "preferredLanguage"
-      ]
+      "required": ["id", "email", "firstName", "lastName", "preferredLanguage"]
     },
     "Hostel": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Hostel",
       "type": "object",
       "description": "Represents a hostel entity.",
@@ -80,7 +73,6 @@
       ]
     },
     "Review": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Review",
       "type": "object",
       "description": "Represents a review given by a resident for a hostel.",
@@ -130,7 +122,6 @@
       ]
     },
     "Room": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Room",
       "type": "object",
       "description": "Represents a room in a hostel.",
@@ -152,15 +143,9 @@
           "description": "Availability status of the room (e.g., available, occupied, maintenance)."
         }
       },
-      "required": [
-        "id",
-        "hostelId",
-        "roomNumber",
-        "availability"
-      ]
+      "required": ["id", "hostelId", "roomNumber", "availability"]
     },
     "Wishlist": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Wishlist",
       "type": "object",
       "description": "Represents a user's wishlist for rooms.",
@@ -178,33 +163,30 @@
           "description": "Reference to Room. (Relationship: Room 1:N Wishlist)"
         }
       },
-      "required": [
-        "id",
-        "userId",
-        "roomId"
-      ]
+      "required": ["id", "userId", "roomId"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/profile",
+        "path": "/users/{userId}/profile/{profileId}",
         "definition": {
           "entityName": "UserProfile",
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user profile information. Path-based ownership ensures only the authenticated user can access their profile.",
+          "description": "Stores user profile information. Path-based ownership ensures only the authenticated user can access their profile. The document ID must match the user's UID.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user."
+              "description": "The unique identifier of the user, matching the authenticated user's UID."
+            },
+            {
+              "name": "profileId",
+              "description": "The document ID, which must be the same as the userId."
             }
           ]
         }
@@ -286,6 +268,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to provide a secure, scalable, and easily debuggable system for HostelVerse, focusing on authorization independence and clear access patterns. \n\nWe are leveraging Structural Segregation to isolate user profiles and hostel data, applying path-based ownership for user-specific data and the Membership Map pattern for collaborative data.\n\nUserProfile:\n*   User profiles are stored under `/users/{userId}/profile` to establish clear ownership and simplify security rules. The `userId` parameter in the path directly corresponds to the authenticated user's ID, ensuring that only the user can access and modify their profile.\n\nHostel:\n*   Hostels are stored in a flat `/hostels` collection. Reviews, Rooms are stored in subcollections. The `members` map enables collaborative authorization.\n\nReviews:\n*   Reviews are stored in a `/hostels/{hostelId}/reviews/{reviewId}` subcollection, reflecting the 1:N relationship between Hostels and Reviews. Authorization is managed via the `userId` field in the review, ensuring only the author or hostel members can manage the review.\n\nRooms:\n*   Rooms are stored in a `/hostels/{hostelId}/rooms/{roomId}` subcollection to represent the 1:N relationship between Hostels and Rooms.\n\nWishlist:\n*   Wishlist items are stored under `/users/{userId}/wishlist/{wishlistId}`, clearly associating each wishlist with a user.\n\n\nAuthorization Independence:\n*   Authorization Independence is achieved by storing the user's role directly within the document, eliminating the need for complex `get()` calls to parent documents in security rules. This approach supports atomic operations and enhances security rule debuggability.\n\nQAPs (Rules are not Filters):\n*   The structure supports secure list operations through structural segregation. Private user data is stored under `/users/{userId}`, allowing simple rules to restrict access based on the authenticated user's ID. Public hostel data in `/hostels` can have more permissive rules while still maintaining security.\n\nDBAC (Database-Based Access Control):\n*   The membership map is used for collaborative data, offering flexibility in defining roles and permissions without relying on custom claims.\n"
+    "reasoning": "The Firestore structure is designed to provide a secure, scalable, and easily debuggable system for HostelVerse, focusing on authorization independence and clear access patterns. We are leveraging Structural Segregation to isolate user profiles and hostel data, applying path-based ownership for user-specific data and the Membership Map pattern for collaborative data. UserProfile: User profiles are stored under `/users/{userId}/profile/{userId}` to establish clear ownership and simplify security rules. The `userId` parameter in the path directly corresponds to the authenticated user's ID, ensuring that only the user can access and modify their profile. Hostel: Hostels are stored in a flat `/hostels` collection. Reviews, Rooms are stored in subcollections. The `members` map enables collaborative authorization. Reviews: Reviews are stored in a `/hostels/{hostelId}/reviews/{reviewId}` subcollection, reflecting the 1:N relationship between Hostels and Reviews. Authorization is managed via the `userId` field in the review, ensuring only the author or hostel members can manage the review. Rooms: Rooms are stored in a `/hostels/{hostelId}/rooms/{roomId}` subcollection to represent the 1:N relationship between Hostels and Rooms. Wishlist: Wishlist items are stored under `/users/{userId}/wishlist/{wishlistId}`, clearly associating each wishlist with a user. Authorization Independence: Authorization Independence is achieved by storing the user's role directly within the document, eliminating the need for complex `get()` calls to parent documents in security rules. This approach supports atomic operations and enhances security rule debuggability. QAPs (Rules are not Filters): The structure supports secure list operations through structural segregation. Private user data is stored under `/users/{userId}`, allowing simple rules to restrict access based on the authenticated user's ID. Public hostel data in `/hostels` can have more permissive rules while still maintaining security. DBAC (Database-Based Access Control): The membership map is used for collaborative data, offering flexibility in defining roles and permissions without relying on custom claims."
   }
 }

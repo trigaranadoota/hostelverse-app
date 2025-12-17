@@ -8,7 +8,8 @@
  * Data Structure:
  * - /users/{userId}/... : Contains all private data for a specific user, segregated
  *   by path for clear, secure access control.
- *   - /profile: A singleton document for the user's profile.
+ *   - /profile: A collection to hold a user's profile. We use a collection
+ *     with the user's UID as the document ID to simplify rule writing and queries.
  *   - /wishlist: A collection of the user's wishlisted rooms.
  * - /hostels/{hostelId}/... : A top-level collection for hostel information. This
  *   data is intended to be publicly readable. Subcollections for reviews and rooms
@@ -49,15 +50,22 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    /**
+     * Ensures that the user ID in the document matches the authenticated user's ID
+     */
+     function resourceIsOwnedByUser() {
+       return request.auth.uid == request.resource.data.id;
+     }
 
     /**
      * Ensures an update or delete operation targets an existing document
      * and is performed by the document's owner.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+      return isOwner(userId) && exists(path);
     }
-
+    
     /**
      * Validates that the `userId` field in a new document matches the
      * creator's authenticated UID.
@@ -79,19 +87,20 @@ service cloud.firestore {
 
     match /users/{userId} {
       /**
+       * @description Denies blanket reads/writes on the user's top-level folder.
+       */
+      allow read, write: if false;
+
+      /**
        * @description Controls access to a user's profile document.
-       * @path /users/{userId}/profile
-       * @allow (get/update) A user (`auth.uid: 'user123'`) reads their own profile at `/users/user123/profile`.
-       * @deny (get) A user (`auth.uid: 'user456'`) tries to read another user's profile at `/users/user123/profile`.
+       * @path /users/{userId}/profile/{profileId}
+       * @allow (get/update) A user (`auth.uid: 'user123'`) reads their own profile at `/users/user123/profile/user123`.
+       * @deny (get) A user (`auth.uid: 'user456'`) tries to read another user's profile at `/users/user123/profile/user123`.
        * @deny (create) A user attempts to create a profile for another user.
        * @principle Restricts access to a user's own data tree and enforces self-creation of the profile.
        */
-      match /profile {
-        allow get: if isOwner(userId);
-        allow list: if false; // It's a singleton document, list is not applicable but denied for safety.
-        allow create: if isOwner(userId) && request.resource.data.id == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-        allow delete: if isExistingOwner(userId);
+      match /profile/{profileId} {
+        allow read, write: if isOwner(userId) && userId == profileId;
       }
 
       /**

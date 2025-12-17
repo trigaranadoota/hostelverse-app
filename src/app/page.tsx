@@ -22,10 +22,10 @@ export default function Home() {
             Explore
           </Link>
           <Link
-            href="/image-verification"
+            href="/profile"
             className="text-sm font-medium hover:underline underline-offset-4"
           >
-            Admin
+            Profile
           </Link>
         </nav>
       </header>

@@ -49,3 +49,11 @@ export type Hostel = {
   gender: 'male' | 'female' | 'mixed';
   roomSharing: 'single' | 'double' | 'multiple';
 };
+
+export type UserProfile = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  preferredLanguage: string;
+};
