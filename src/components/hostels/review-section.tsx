@@ -27,7 +27,7 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Utensils, Shield, Sparkles, UserCheck } from "lucide-react";
-import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
+import { useUser, useFirebase, useMemoFirebase, useFirebaseApp } from "@/firebase";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -147,7 +147,8 @@ async function fetchUserProfilesForReviews(firestore: any, reviews: Review[]): P
 
 export function ReviewSection({ hostel }: { hostel: Hostel }) {
   const { user } = useUser();
-  const { firestore, firebaseApp } = useFirebase();
+  const { firestore } = useFirebase();
+  const firebaseApp = useFirebaseApp();
   const { toast } = useToast();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
