@@ -22,6 +22,15 @@
           "description": "User's email address.",
           "format": "email"
         },
+        "mobileNumber": {
+          "type": "string",
+          "description": "User's mobile phone number."
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "User's date of birth.",
+          "format": "date"
+        },
         "preferredLanguage": {
           "type": "string",
           "description": "User's preferred language for the application interface.",

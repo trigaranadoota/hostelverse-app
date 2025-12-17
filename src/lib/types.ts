@@ -74,6 +74,8 @@ export type UserProfile = {
   firstName: string;
   lastName: string;
   email: string;
+  mobileNumber?: string;
+  dateOfBirth?: string;
   preferredLanguage: string;
 };
 
