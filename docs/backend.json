@@ -108,6 +108,10 @@
         "safetyRating": {
           "type": "number",
           "description": "Star rating for safety."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of an image attached to the review."
         }
       },
       "required": [

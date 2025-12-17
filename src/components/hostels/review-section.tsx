@@ -26,14 +26,16 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Utensils, Shield, Sparkles, UserCheck } from "lucide-react";
-import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
+import { useUser, useFirebase, useMemoFirebase } from "@/firebase";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { formatDistanceToNow } from 'date-fns';
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 
 const reviewSchema = z.object({
@@ -42,6 +44,7 @@ const reviewSchema = z.object({
   cleanlinessRating: z.number().min(1, "Rating is required.").max(5),
   managementRating: z.number().min(1, "Rating is required.").max(5),
   safetyRating: z.number().min(1, "Rating is required.").max(5),
+  picture: z.any().optional(),
 });
 
 const ratingCategories = [
@@ -83,6 +86,12 @@ function ReviewCard({ review }: { review: Review }) {
           <StarRating rating={overallRating} readOnly size={16} />
         </div>
         <p className="text-sm">{review.text}</p>
+
+        {review.imageUrl && (
+            <div className="relative aspect-video w-full max-w-sm mt-2 overflow-hidden rounded-lg">
+                <Image src={review.imageUrl} alt="Review image" fill className="object-cover" />
+            </div>
+        )}
         
         <div className="grid grid-cols-1 gap-y-1 text-sm pt-2">
           <div className="flex justify-between items-center">
@@ -136,7 +145,7 @@ async function fetchUserProfilesForReviews(firestore: any, reviews: Review[]): P
 
 export function ReviewSection({ hostel }: { hostel: Hostel }) {
   const { user } = useUser();
-  const firestore = useFirestore();
+  const { firestore, firebaseApp } = useFirebase();
   const { toast } = useToast();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -175,11 +184,39 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
         return;
     }
     setIsSubmitting(true);
+
+    let imageUrl: string | undefined = undefined;
+    const imageFile = values.picture?.[0];
+
+    if (imageFile && firebaseApp) {
+        try {
+            const storage = getStorage(firebaseApp);
+            const imageRef = storageRef(storage, `reviews/${user.uid}/${Date.now()}_${imageFile.name}`);
+            const uploadResult = await uploadBytes(imageRef, imageFile);
+            imageUrl = await getDownloadURL(uploadResult.ref);
+        } catch (error) {
+            console.error("Image upload failed:", error);
+            toast({
+                variant: "destructive",
+                title: "Image Upload Failed",
+                description: "Could not upload your photo. Please try again.",
+            });
+            setIsSubmitting(false);
+            return;
+        }
+    }
+
+
     const reviewData = {
-        ...values,
+        text: values.text,
+        foodRating: values.foodRating,
+        cleanlinessRating: values.cleanlinessRating,
+        managementRating: values.managementRating,
+        safetyRating: values.safetyRating,
         hostelId: hostel.id,
         userId: user.uid,
         createdAt: serverTimestamp(),
+        imageUrl,
     };
     
     addDoc(reviewsCollectionRef, reviewData)
@@ -277,10 +314,24 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
                 )}
               />
 
-              <div className="space-y-2">
-                <Label htmlFor="picture">Add a photo (optional)</Label>
-                <Input id="picture" type="file" disabled/>
-              </div>
+              <FormField
+                control={form.control}
+                name="picture"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Add a photo (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => field.onChange(e.target.files)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
 
               <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
                 {isSubmitting ? "Submitting..." : (user ? "Submit Review" : "Log in to review")}

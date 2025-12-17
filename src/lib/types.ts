@@ -18,6 +18,7 @@ export type Review = {
   createdAt: Timestamp | Date;
   userDisplayName?: string;
   userPhotoURL?: string;
+  imageUrl?: string;
 };
 
 export type Room = {
