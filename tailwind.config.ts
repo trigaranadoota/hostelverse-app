@@ -65,6 +65,9 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        'room-available': 'hsl(var(--room-available))',
+        'room-occupied': 'hsl(var(--room-occupied))',
+        'room-maintenance': 'hsl(var(--room-maintenance))',
       },
       borderRadius: {
         lg: 'var(--radius)',
