@@ -78,7 +78,7 @@ export function RoomBookingSystem({ hostel }: RoomBookingSystemProps) {
     setIsPaymentDialogOpen(false);
   };
   
-  const totalAmount = hostel.feeStructure.rent + hostel.feeStructure.deposit + hostel.feeStructure.registration.fee;
+  const totalAmount = hostel.feeStructure.registration.fee;
 
 
   return (
@@ -147,12 +147,6 @@ export function RoomBookingSystem({ hostel }: RoomBookingSystemProps) {
           </DialogHeader>
           <div className="py-4 space-y-2">
             <p>
-              <span className="font-semibold">Monthly Rent:</span> ₹{hostel.feeStructure.rent.toLocaleString()}
-            </p>
-            <p>
-              <span className="font-semibold">Security Deposit:</span> ₹{hostel.feeStructure.deposit.toLocaleString()} (one-time)
-            </p>
-            <p>
               <span className="font-semibold">Registration Fee:</span> ₹{hostel.feeStructure.registration.fee.toLocaleString()} (one-time)
             </p>
              <p className="font-bold border-t pt-2 mt-2">
@@ -160,6 +154,9 @@ export function RoomBookingSystem({ hostel }: RoomBookingSystemProps) {
             </p>
             <p className="text-sm text-muted-foreground pt-2">
               Registration Deadline: {format(new Date(hostel.feeStructure.registration.deadline), "MMMM dd, yyyy")}
+            </p>
+             <p className="text-sm text-muted-foreground pt-2">
+              Monthly rent and security deposit will be collected at the hostel.
             </p>
           </div>
           <DialogFooter>
