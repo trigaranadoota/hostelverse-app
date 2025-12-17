@@ -85,22 +85,22 @@ function ReviewCard({ review }: { review: Review }) {
         <p className="text-sm">{review.text}</p>
         
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm pt-2">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[0].icon} {ratingCategories[0].label}</span>
-              <StarRating rating={review.foodRating} readOnly size={14} />
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[1].icon} {ratingCategories[1].label}</span>
-              <StarRating rating={review.cleanlinessRating} readOnly size={14} />
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[2].icon} {ratingCategories[2].label}</span>
-              <StarRating rating={review.managementRating} readOnly size={14} />
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[3].icon} {ratingCategories[3].label}</span>
-              <StarRating rating={review.safetyRating} readOnly size={14} />
-            </div>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[0].icon} {ratingCategories[0].label}</span>
+            <StarRating rating={review.foodRating} readOnly size={14} />
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[1].icon} {ratingCategories[1].label}</span>
+            <StarRating rating={review.cleanlinessRating} readOnly size={14} />
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[2].icon} {ratingCategories[2].label}</span>
+            <StarRating rating={review.managementRating} readOnly size={14} />
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[3].icon} {ratingCategories[3].label}</span>
+            <StarRating rating={review.safetyRating} readOnly size={14} />
+          </div>
         </div>
       </div>
     </div>
@@ -112,10 +112,14 @@ async function fetchUserProfilesForReviews(firestore: any, reviews: Review[]): P
     const userProfiles = new Map<string, UserProfile>();
 
     for (const userId of userIds) {
-        const userDocRef = doc(firestore, 'users', userId, 'profile', userId);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-            userProfiles.set(userId, userDocSnap.data() as UserProfile);
+        try {
+            const userDocRef = doc(firestore, 'users', userId, 'profile', userId);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                userProfiles.set(userId, userDocSnap.data() as UserProfile);
+            }
+        } catch (error) {
+            console.error(`Failed to fetch profile for user ${userId}`, error);
         }
     }
 
