@@ -1,0 +1,164 @@
+/**
+ * Core Philosophy: This ruleset implements a dual security model. User-specific data
+ * (profiles, wishlists) is protected under a strict ownership model where only the
+ * authenticated user can access their own data. Shared data (hostels, reviews, rooms)
+ * is generally public to read, with write access restricted to document authors
+ * (for reviews) or intended collaborators (for hostels).
+ *
+ * Data Structure:
+ * - /users/{userId}/... : Contains all private data for a specific user, segregated
+ *   by path for clear, secure access control.
+ *   - /profile: A singleton document for the user's profile.
+ *   - /wishlist: A collection of the user's wishlisted rooms.
+ * - /hostels/{hostelId}/... : A top-level collection for hostel information. This
+ *   data is intended to be publicly readable. Subcollections for reviews and rooms
+ *   are nested here.
+ *
+ * Key Security Decisions:
+ * - User Data Isolation: All data under `/users/{userId}` is strictly private. A user
+ *   cannot read, write, or even list the contents of another user's data tree.
+ * - Public Read, Restricted Write: Hostel, room, and review data is publicly readable
+ *   to support the app's browsing features. Write operations are locked down.
+ * - Review Authorship: Users can create reviews for any hostel, but only the original
+ *   author of a review can update or delete it. This is enforced by a `userId` field
+ *   on the review document.
+ * - Hostel Management (Pending): Write access to hostel and room documents is currently
+ *   denied. The intended pattern is collaborative management via a denormalized 'members'
+ *   map on each hostel document. This feature is pending the necessary schema update.
+ * - Default Deny: Any path not explicitly matched is inaccessible.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Verifies that the request is coming from an authenticated user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the given userId.
+     * This is the primary function for enforcing data ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Ensures an update or delete operation targets an existing document
+     * and is performed by the document's owner.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates that the `userId` field in a new document matches the
+     * creator's authenticated UID.
+     */
+    function creatorOwnsNewDocument() {
+      return isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    /**
+     * Enforces immutability of the ownership field on update.
+     */
+    function ownerFieldIsImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    // -------------------------------------------------------------------------
+    // User Data (/users)
+    // -------------------------------------------------------------------------
+
+    match /users/{userId} {
+      /**
+       * @description Controls access to a user's profile document.
+       * @path /users/{userId}/profile
+       * @allow (get/update) A user (`auth.uid: 'user123'`) reads their own profile at `/users/user123/profile`.
+       * @deny (get) A user (`auth.uid: 'user456'`) tries to read another user's profile at `/users/user123/profile`.
+       * @deny (create) A user attempts to create a profile for another user.
+       * @principle Restricts access to a user's own data tree and enforces self-creation of the profile.
+       */
+      match /profile {
+        allow get: if isOwner(userId);
+        allow list: if false; // It's a singleton document, list is not applicable but denied for safety.
+        allow create: if isOwner(userId) && request.resource.data.id == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Controls access to a user's wishlist items.
+       * @path /users/{userId}/wishlist/{wishlistId}
+       * @allow (create) A user (`auth.uid: 'user123'`) adds an item to their own wishlist at `/users/user123/wishlist/item_abc`.
+       * @deny (list) A user (`auth.uid: 'user456'`) tries to list items in another user's wishlist.
+       * @deny (update) A user tries to change the `userId` on an existing wishlist item.
+       * @principle Enforces strict data ownership within a user-specific subcollection.
+       */
+      match /wishlist/{wishlistId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && ownerFieldIsImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Hostel Data (/hostels)
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Controls access to public hostel documents.
+     * @path /hostels/{hostelId}
+     * @allow (get) Any user, signed in or not, can view a hostel's details.
+     * @deny (create) Any user attempts to create a new hostel. This is currently disabled.
+     * @principle Implements a "Public Read" pattern. Writes are denied pending implementation of a collaborative 'members' map.
+     */
+    match /hostels/{hostelId} {
+      allow get, list: if true;
+      // CRITICAL: Cannot implement collaborative writes. The 'Hostel' entity is missing a 'members' map.
+      // TODO: Add member validation once the schema is updated with a members map (e.g., `resource.data.members[request.auth.uid] == 'admin'`).
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+
+      /**
+       * @description Controls access to hostel reviews. Anyone can read, but only the author can modify their own review.
+       * @path /hostels/{hostelId}/reviews/{reviewId}
+       * @allow (create) An authenticated user (`auth.uid: 'user123'`) creates a review where `userId` field is 'user123'.
+       * @deny (update) A user (`auth.uid: 'user456'`) tries to update a review written by 'user123'.
+       * @principle Enforces document ownership for writes on a publicly readable collection.
+       */
+      match /reviews/{reviewId} {
+        allow get, list: if true;
+        allow create: if creatorOwnsNewDocument() && request.resource.data.hostelId == hostelId;
+        allow update: if isSignedIn() && resource != null && isOwner(resource.data.userId) && ownerFieldIsImmutable() && request.resource.data.hostelId == resource.data.hostelId;
+        allow delete: if isSignedIn() && resource != null && isOwner(resource.data.userId);
+      }
+
+      /**
+       * @description Controls access to rooms within a hostel.
+       * @path /hostels/{hostelId}/rooms/{roomId}
+       * @allow (get) Any user, signed in or not, can view a room's details.
+       * @deny (create) Any user attempts to create a new room. This is currently disabled.
+       * @principle Implements "Public Read". Writes require checking the parent hostel, but are disabled pending schema updates.
+       */
+      match /rooms/{roomId} {
+        allow get, list: if true;
+        // CRITICAL: Cannot implement collaborative writes. The parent 'Hostel' entity is missing a 'members' map.
+        // This rule would require a `get()` on the parent hostel to check for membership.
+        // TODO: Implement member-only writes once the parent hostel schema is updated.
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+  }
+}
