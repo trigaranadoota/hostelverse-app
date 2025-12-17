@@ -1,7 +1,7 @@
 
 'use client';
 import { hostels } from "@/lib/data";
-import { notFound, useRouter } from "next/navigation";
+import { notFound, useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import {
   Carousel,
@@ -26,8 +26,10 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import type { Wishlist } from "@/lib/types";
 
-export default function HostelDetailPage({ params }: { params: { id: string } }) {
-  const hostel = hostels.find((h) => h.id === params.id);
+export default function HostelDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = params.id;
+  const hostel = hostels.find((h) => h.id === id);
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
@@ -41,8 +43,8 @@ export default function HostelDetailPage({ params }: { params: { id: string } })
   );
   
   const userWishlistQuery = useMemoFirebase(
-    () => (wishlistCollectionRef ? query(wishlistCollectionRef, where('hostelId', '==', params.id)) : null),
-    [wishlistCollectionRef, params.id]
+    () => (wishlistCollectionRef && id ? query(wishlistCollectionRef, where('hostelId', '==', id)) : null),
+    [wishlistCollectionRef, id]
   );
 
   const { data: wishlistItems, isLoading: isWishlistLoading } = useCollection<Wishlist>(userWishlistQuery);
