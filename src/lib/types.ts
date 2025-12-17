@@ -1,7 +1,7 @@
 export type Amenity = {
   id: string;
   name: string;
-  icon: React.ElementType;
+  icon: string; // Changed from React.ElementType to string
 };
 
 export type Review = {

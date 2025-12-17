@@ -1,16 +1,15 @@
 import { Hostel, Amenity } from './types';
-import { Wifi, ParkingCircle, UtensilsCrossed, Wind, Tv, WashingMachine } from 'lucide-react';
 import { PlaceHolderImages } from './placeholder-images';
 
 const getImageUrl = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
 
 export const amenities: Amenity[] = [
-  { id: '1', name: 'Free Wi-Fi', icon: Wifi },
-  { id: '2', name: 'Parking', icon: ParkingCircle },
-  { id: '3', name: 'Shared Kitchen', icon: UtensilsCrossed },
-  { id: '4', name: 'Air Conditioning', icon: Wind },
-  { id: '5', name: 'TV Room', icon: Tv },
-  { id: '6', name: 'Laundry', icon: WashingMachine },
+  { id: '1', name: 'Free Wi-Fi', icon: 'Wifi' },
+  { id: '2', name: 'Parking', icon: 'ParkingCircle' },
+  { id: '3', name: 'Shared Kitchen', icon: 'UtensilsCrossed' },
+  { id: '4', name: 'Air Conditioning', icon: 'Wind' },
+  { id: '5', name: 'TV Room', icon: 'Tv' },
+  { id: '6', name: 'Laundry', icon: 'WashingMachine' },
 ];
 
 export const hostels: Hostel[] = [
