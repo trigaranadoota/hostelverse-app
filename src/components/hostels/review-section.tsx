@@ -1,3 +1,4 @@
+
 "use client";
 import { Review, Hostel, UserProfile } from "@/lib/types";
 import {
@@ -44,7 +45,7 @@ const reviewSchema = z.object({
   cleanlinessRating: z.number().min(1, "Rating is required.").max(5),
   managementRating: z.number().min(1, "Rating is required.").max(5),
   safetyRating: z.number().min(1, "Rating is required.").max(5),
-  picture: z.any().optional(),
+  picture: z.instanceof(FileList).optional(),
 });
 
 const ratingCategories = [
@@ -118,6 +119,7 @@ function ReviewCard({ review }: { review: Review }) {
 
 async function fetchUserProfilesForReviews(firestore: any, reviews: Review[]): Promise<Review[]> {
     const userIds = [...new Set(reviews.map(review => review.userId))];
+    if (userIds.length === 0) return reviews;
     const userProfiles = new Map<string, UserProfile>();
 
     for (const userId of userIds) {
@@ -160,8 +162,10 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
   useEffect(() => {
     if (rawReviews && firestore) {
       fetchUserProfilesForReviews(firestore, rawReviews).then(setReviews);
+    } else if (!areReviewsLoading) {
+      setReviews([]);
     }
-  }, [rawReviews, firestore]);
+  }, [rawReviews, firestore, areReviewsLoading]);
 
   const form = useForm<z.infer<typeof reviewSchema>>({
     resolver: zodResolver(reviewSchema),
@@ -173,6 +177,8 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
       safetyRating: 0,
     },
   });
+
+  const pictureRef = form.register("picture");
 
   async function onSubmit(values: z.infer<typeof reviewSchema>) {
     if (!user || !reviewsCollectionRef) {
@@ -314,23 +320,17 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="picture"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Add a photo (optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => field.onChange(e.target.files)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormItem>
+                <FormLabel>Add a photo (optional)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    {...pictureRef}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
 
 
               <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
