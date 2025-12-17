@@ -59,10 +59,10 @@ service cloud.firestore {
      }
 
     /**
-     * Ensures an update or delete operation targets an existing document
+     * Ensures an update operation targets an existing document
      * and is performed by the document's owner.
      */
-    function isExistingOwner(userId) {
+    function isExistingOwnerForUpdate(userId) {
       return isOwner(userId) && exists(path);
     }
     
@@ -116,8 +116,8 @@ service cloud.firestore {
       match /wishlist/{wishlistId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && ownerFieldIsImmutable();
-        allow delete: if isExistingOwner(userId);
+        allow update: if isExistingOwnerForUpdate(userId) && ownerFieldIsImmutable();
+        allow delete: if isOwner(userId);
       }
     }
 
