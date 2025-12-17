@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase/firestore';
+
 export type Amenity = {
   id: string;
   name: string;
@@ -6,17 +8,16 @@ export type Amenity = {
 
 export type Review = {
   id: string;
-  author: string;
-  avatarUrl: string;
-  date: string;
-  content: string;
-  imageUrl?: string;
-  ratings: {
-    food: number;
-    cleanliness: number;
-    management: number;
-    safety: number;
-  };
+  hostelId: string;
+  userId: string;
+  text: string;
+  foodRating: number;
+  cleanlinessRating: number;
+  managementRating: number;
+  safetyRating: number;
+  createdAt: Timestamp | Date;
+  userDisplayName?: string;
+  userPhotoURL?: string;
 };
 
 export type Room = {
@@ -45,7 +46,20 @@ export type Hostel = {
     ai: boolean;
     human: boolean;
   };
-  reviews: Review[];
+  reviews: {
+    id: string;
+    author: string;
+    avatarUrl: string;
+    date: string;
+    content: string;
+    imageUrl?: string;
+    ratings: {
+        food: number;
+        cleanliness: number;
+        management: number;
+        safety: number;
+    };
+  }[];
   floors: {
     level: number;
     rooms: Room[];
