@@ -195,53 +195,49 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
     let imageUrl: string | undefined = undefined;
     const imageFile = values.picture?.[0];
 
-    if (imageFile && firebaseApp) {
-        try {
+    try {
+        if (imageFile && firebaseApp) {
             const storage = getStorage(firebaseApp);
             const imageRef = storageRef(storage, `reviews/${user.uid}/${Date.now()}_${imageFile.name}`);
             const uploadResult = await uploadBytes(imageRef, imageFile);
             imageUrl = await getDownloadURL(uploadResult.ref);
-        } catch (error) {
-            console.error("Image upload failed:", error);
-            toast({
-                variant: "destructive",
-                title: "Image Upload Failed",
-                description: "Could not upload your photo. Please try again.",
-            });
-            setIsSubmitting(false);
-            return;
         }
-    }
 
+        const reviewData = {
+            text: values.text,
+            foodRating: values.foodRating,
+            cleanlinessRating: values.cleanlinessRating,
+            managementRating: values.managementRating,
+            safetyRating: values.safetyRating,
+            hostelId: hostel.id,
+            userId: user.uid,
+            createdAt: serverTimestamp(),
+            imageUrl,
+        };
+        
+        await addDoc(reviewsCollectionRef, reviewData);
+        toast({ title: "Review submitted successfully!" });
+        form.reset();
 
-    const reviewData = {
-        text: values.text,
-        foodRating: values.foodRating,
-        cleanlinessRating: values.cleanlinessRating,
-        managementRating: values.managementRating,
-        safetyRating: values.safetyRating,
-        hostelId: hostel.id,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        imageUrl,
-    };
-    
-    addDoc(reviewsCollectionRef, reviewData)
-        .then(() => {
-            toast({ title: "Review submitted successfully!" });
-            form.reset();
-        })
-        .catch(e => {
-            const permissionError = new FirestorePermissionError({
+    } catch (error) {
+        console.error("Submission failed:", error);
+        const isPermissionError = error instanceof FirestorePermissionError;
+        if (!isPermissionError) {
+             const permissionError = new FirestorePermissionError({
                 path: reviewsCollectionRef.path,
                 operation: 'create',
-                requestResourceData: reviewData
+                requestResourceData: values
             });
             errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => {
-            setIsSubmitting(false);
+        }
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: "Could not submit your review. Please try again.",
         });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
 
   return (
