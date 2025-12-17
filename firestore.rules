@@ -100,7 +100,9 @@ service cloud.firestore {
        * @principle Restricts access to a user's own data tree and enforces self-creation of the profile.
        */
       match /profile/{profileId} {
-        allow read, write: if isOwner(userId) && userId == profileId;
+        allow get, update: if isOwner(userId) && userId == profileId;
+        allow create: if isOwner(userId) && userId == profileId && resourceIsOwnedByUser();
+        allow delete: if false;
       }
 
       /**
