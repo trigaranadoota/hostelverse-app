@@ -148,7 +148,7 @@
     "Wishlist": {
       "title": "Wishlist",
       "type": "object",
-      "description": "Represents a user's wishlist for rooms.",
+      "description": "Represents a user's wishlist for hostels.",
       "properties": {
         "id": {
           "type": "string",
@@ -158,12 +158,12 @@
           "type": "string",
           "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Wishlist)"
         },
-        "roomId": {
+        "hostelId": {
           "type": "string",
-          "description": "Reference to Room. (Relationship: Room 1:N Wishlist)"
+          "description": "Reference to Hostel. (Relationship: Hostel 1:N Wishlist)"
         }
       },
-      "required": ["id", "userId", "roomId"]
+      "required": ["id", "userId", "hostelId"]
     }
   },
   "auth": {

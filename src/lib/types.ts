@@ -61,3 +61,9 @@ export type UserProfile = {
   email: string;
   preferredLanguage: string;
 };
+
+export type Wishlist = {
+  id: string;
+  userId: string;
+  hostelId: string;
+};
