@@ -3,6 +3,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Building2 } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/shared/language-switcher';
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-1');
@@ -14,19 +15,11 @@ export default function Home() {
           <Building2 className="h-6 w-6 text-primary" />
           <span className="sr-only">HostelVerse</span>
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link
-            href="/hostels"
-            className="text-sm font-medium hover:underline underline-offset-4"
-          >
-            Explore
-          </Link>
-          <Link
-            href="/profile"
-            className="text-sm font-medium hover:underline underline-offset-4"
-          >
-            Profile
-          </Link>
+        <nav className="ml-auto flex items-center gap-4 sm:gap-6">
+          <LanguageSwitcher />
+          <Button asChild>
+            <Link href="/login">Sign In</Link>
+          </Button>
         </nav>
       </header>
       <main className="flex-1">
@@ -46,7 +39,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button asChild size="lg">
-                    <Link href="/hostels">Explore Hostels</Link>
+                    <Link href="/login">Explore Hostels</Link>
                   </Button>
                 </div>
               </div>

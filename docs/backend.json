@@ -28,7 +28,7 @@
           "enum": ["en", "es", "fr", "de"]
         }
       },
-      "required": ["id", "email", "firstName", "lastName", "preferredLanguage"]
+      "required": ["id", "email"]
     },
     "Hostel": {
       "title": "Hostel",
@@ -167,7 +167,7 @@
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": ["password", "google.com"]
   },
   "firestore": {
     "structure": [
