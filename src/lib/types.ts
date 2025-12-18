@@ -32,6 +32,10 @@ export type Hostel = {
   name: string;
   address: string;
   contact: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
   images: { id: string; url: string; alt: string; hint: string }[];
   amenities: Amenity[];
   feeStructure: {

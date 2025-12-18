@@ -18,6 +18,7 @@ export const hostels: Hostel[] = [
     name: "The Wanderer's Hub",
     address: '123 Adventure Ave, Metro City',
     contact: 'contact@wanderershub.com',
+    location: { lat: 34.052235, lng: -118.243683 },
     images: [
       { id: 'h1i1', url: getImageUrl('hostel-1-exterior'), alt: 'Exterior of The Wanderer\'s Hub', hint: 'hostel exterior' },
       { id: 'h1i2', url: getImageUrl('hostel-1-room'), alt: 'Dorm room at The Wanderer\'s Hub', hint: 'dorm room' },
@@ -73,6 +74,7 @@ export const hostels: Hostel[] = [
     name: 'The City Nomad',
     address: '456 Urban St, Central Plaza',
     contact: 'info@citynomad.com',
+    location: { lat: 40.712776, lng: -74.005974 },
     images: [
         { id: 'h2i1', url: getImageUrl('hostel-2-exterior'), alt: 'Exterior of The City Nomad', hint: 'city building' },
         { id: 'h2i2', url: getImageUrl('hostel-2-room'), alt: 'Bunk beds at The City Nomad', hint: 'bunk beds' },
@@ -120,6 +122,7 @@ export const hostels: Hostel[] = [
     name: 'The Green Haven (Men)',
     address: '789 Nature Ln, Verdant Valley',
     contact: 'stay@greenhaven.com',
+    location: { lat: 36.1699, lng: -115.1398 },
     images: [
         { id: 'h3i1', url: getImageUrl('hostel-3-exterior'), alt: 'Exterior of The Green Haven', hint: 'building nature' },
         { id: 'h3i2', url: getImageUrl('hostel-3-room'), alt: 'Room at The Green Haven', hint: 'bedroom window' },
