@@ -4,17 +4,16 @@
 import { useState, useMemo } from 'react';
 import { HostelCard } from '@/components/hostels/hostel-card';
 import { FilterDropdown } from '@/components/hostels/filter-dropdown';
-import type { Hostel, Review } from '@/lib/types';
+import type { Hostel } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { Search, List, Map, UploadCloud } from 'lucide-react';
+import { Search, List, Map } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { HostelsMap } from '@/components/hostels/hostels-map';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
-import { seedHostels, seedReviews } from '@/lib/seed-data';
-import { useToast } from '@/hooks/use-toast';
+import { collection } from 'firebase/firestore';
+import { Ghost } from 'lucide-react';
 
 type Filters = {
   gender: string;
@@ -27,7 +26,6 @@ type ViewMode = 'list' | 'map';
 export default function HostelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [isSeeding, setIsSeeding] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     gender: 'any',
     roomSharing: 'any',
@@ -35,57 +33,8 @@ export default function HostelsPage() {
   });
 
   const firestore = useFirestore();
-  const { toast } = useToast();
   const hostelsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'hostels') : null, [firestore]);
   const { data: hostels, isLoading: areHostelsLoading } = useCollection<Hostel>(hostelsCollectionRef);
-
-  const handleSeedData = async () => {
-    if (!firestore) return;
-    setIsSeeding(true);
-
-    try {
-      const batch = writeBatch(firestore);
-      const hostelRefs: { [key: string]: string } = {};
-
-      // Batch write hostels
-      for (const hostelData of seedHostels) {
-        const hostelRef = doc(collection(firestore, 'hostels'));
-        batch.set(hostelRef, hostelData);
-        hostelRefs[hostelData.name] = hostelRef.id;
-      }
-      
-      // Batch write reviews
-      for (const reviewData of seedReviews) {
-        const hostelId = hostelRefs[reviewData.hostelName];
-        if (hostelId) {
-          const reviewRef = doc(collection(firestore, `hostels/${hostelId}/reviews`));
-          const { hostelName, ...reviewToSave } = reviewData;
-          batch.set(reviewRef, {
-            ...reviewToSave,
-            hostelId: hostelId,
-            createdAt: serverTimestamp(),
-          });
-        }
-      }
-
-      await batch.commit();
-
-      toast({
-        title: 'Sample data added!',
-        description: '3 hostels and 3 reviews have been added to your database.',
-      });
-    } catch (error) {
-      console.error('Error seeding data:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error seeding data',
-        description: 'Could not add sample data. Check the console for more details.',
-      });
-    } finally {
-      setIsSeeding(false);
-    }
-  };
-
 
   const filteredHostels = useMemo(() => {
     if (!hostels) return [];
@@ -167,12 +116,9 @@ export default function HostelsPage() {
                 ) : !areHostelsLoading ? (
                     <div className="text-center py-16">
                       <div className="flex flex-col items-center gap-4">
+                        <Ghost className="h-12 w-12 text-muted-foreground" />
                         <h2 className="text-2xl font-semibold">No Hostels Found</h2>
-                        <p className="text-muted-foreground mt-2 max-w-md">Your database is empty. Add some hostels to see them here, or use the button below to add some sample data.</p>
-                        <Button onClick={handleSeedData} disabled={isSeeding}>
-                          <UploadCloud className="mr-2 h-4 w-4" />
-                          {isSeeding ? 'Adding Samples...' : 'Seed Sample Hostels'}
-                        </Button>
+                        <p className="text-muted-foreground mt-2 max-w-md">Your database is empty. Add hostels to your Firestore 'hostels' collection to see them here.</p>
                       </div>
                     </div>
                 ) : null}
