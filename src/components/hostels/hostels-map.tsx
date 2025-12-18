@@ -37,10 +37,10 @@ export function HostelsMap({ hostels }: HostelsMapProps) {
     <div className="relative w-full h-full bg-muted">
        <Image 
         src={mapImage?.imageUrl || "https://picsum.photos/seed/map/1200/800"}
-        alt="Fake map background"
+        alt={mapImage?.description || "Stylized map background"}
         fill
         className="object-cover"
-        data-ai-hint="map background"
+        data-ai-hint={mapImage?.imageHint || "vector map"}
       />
       <div className="absolute inset-0">
         {hostels.map(hostel => {

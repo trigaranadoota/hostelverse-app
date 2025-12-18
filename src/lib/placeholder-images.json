@@ -75,8 +75,8 @@
     {
       "id": "map-background",
       "description": "A stylized, abstract map background.",
-      "imageUrl": "https://images.unsplash.com/photo-1533423924443-a0833a9c1e09?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyMHx8bWFwJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3NjYwMDM4ODR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "map background"
+      "imageUrl": "https://images.unsplash.com/photo-1599946347371-e8c891c937df?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx2ZWN0b3IlMjBtYXAlMjBwbGFufGVufDB8fHx8MTc2NjAzNDUwMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vector map"
     }
   ]
 }
