@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { Timestamp, FieldValue } from 'firebase/firestore';
 
 export type Amenity = {
   id: string;
@@ -15,7 +15,7 @@ export type Review = {
   cleanlinessRating: number;
   managementRating: number;
   safetyRating: number;
-  createdAt: Timestamp | Date;
+  createdAt: Timestamp | Date | FieldValue;
   userDisplayName?: string;
   userPhotoURL?: string;
   imageUrl?: string;

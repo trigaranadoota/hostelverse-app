@@ -28,7 +28,7 @@ import {
 import { Utensils, Shield, Sparkles, UserCheck } from "lucide-react";
 import { useUser, useFirestore, useMemoFirebase, useFirebaseApp } from "@/firebase";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, getDoc, Timestamp } from "firebase/firestore";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -197,7 +197,7 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
       cleanlinessRating: 0,
       managementRating: 0,
       safetyRating: 0,
-      picture: 0,
+      picture: undefined,
     },
   });
 
@@ -237,14 +237,12 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
             imageUrl,
         };
         
-        // Use non-blocking write with proper error handling
         addDoc(reviewsCollectionRef, reviewData)
             .then(() => {
                 toast({ title: "Review submitted successfully!" });
                 form.reset();
             })
             .catch((e) => {
-                // This catch block handles Firestore write errors, including permission errors.
                 const permissionError = new FirestorePermissionError({
                     path: reviewsCollectionRef.path,
                     operation: 'create',
@@ -254,7 +252,6 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
             });
 
     } catch (error) {
-        // This catch block will primarily handle storage errors (uploading the image)
         console.error("Review submission failed:", error);
         toast({
             variant: "destructive",
@@ -262,7 +259,6 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
             description: "Could not upload image or submit your review. Please try again.",
         });
     } finally {
-        // This will now correctly run after both success and failure
         setIsSubmitting(false);
     }
   }
