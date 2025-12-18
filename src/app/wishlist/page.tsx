@@ -4,12 +4,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart } from "lucide-react";
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection } from "firebase/firestore";
-import { Wishlist } from "@/lib/types";
-import { hostels } from "@/lib/data";
+import { collection, doc } from "firebase/firestore";
+import { Wishlist, Hostel } from "@/lib/types";
 import { HostelCard } from "@/components/hostels/hostel-card";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import { useDoc } from "@/firebase/firestore/use-doc";
+
+function WishlistedHostelCard({ hostelId }: { hostelId: string }) {
+  const firestore = useFirestore();
+  const hostelRef = useMemoFirebase(() => doc(firestore, 'hostels', hostelId), [firestore, hostelId]);
+  const { data: hostel, isLoading } = useDoc<Hostel>(hostelRef);
+
+  if (isLoading) {
+    return <div>Loading hostel...</div>; // Or a skeleton loader
+  }
+
+  if (!hostel) {
+    return null; // Or some fallback UI
+  }
+
+  return <HostelCard hostel={hostel} />;
+}
 
 export default function WishlistPage() {
   const { user, isUserLoading } = useUser();
@@ -28,9 +44,6 @@ export default function WishlistPage() {
     }
   }, [isUserLoading, user, router]);
 
-  const wishlistedHostels =
-    wishlistItems?.map((item) => hostels.find((h) => h.id === item.hostelId)).filter(Boolean) ?? [];
-
   if (isUserLoading || isWishlistLoading) {
     return <p>Loading wishlist...</p>;
   }
@@ -41,10 +54,10 @@ export default function WishlistPage() {
         <CardTitle>My Wishlist</CardTitle>
       </CardHeader>
       <CardContent>
-        {wishlistedHostels.length > 0 ? (
+        {wishlistItems && wishlistItems.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {wishlistedHostels.map((hostel) => (
-              hostel && <HostelCard key={hostel.id} hostel={hostel} />
+            {wishlistItems.map((item) => (
+              <WishlistedHostelCard key={item.id} hostelId={item.hostelId} />
             ))}
           </div>
         ) : (

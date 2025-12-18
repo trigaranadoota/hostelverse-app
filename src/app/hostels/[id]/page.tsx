@@ -1,7 +1,6 @@
 
 'use client';
-import { hostels } from "@/lib/data";
-import { notFound, useRouter, useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import {
   Carousel,
@@ -19,23 +18,26 @@ import { RoomBookingSystem } from "@/components/hostels/room-booking-system";
 import { ReviewSection } from "@/components/hostels/review-section";
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { useEffect, useState } from "react";
-import { addDoc, collection, deleteDoc, getDocs, query, where, doc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, query, where, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import type { Wishlist } from "@/lib/types";
+import { useDoc } from "@/firebase/firestore/use-doc";
+import type { Wishlist, Hostel } from "@/lib/types";
 
 export default function HostelDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const hostel = hostels.find((h) => h.id === id);
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistDocId, setWishlistDocId] = useState<string | null>(null);
+
+  const hostelRef = useMemoFirebase(() => (id ? doc(firestore, 'hostels', id) : null), [firestore, id]);
+  const { data: hostel, isLoading: isHostelLoading, error: hostelError } = useDoc<Hostel>(hostelRef);
 
   const wishlistCollectionRef = useMemoFirebase(
     () => (user ? collection(firestore, 'users', user.uid, 'wishlist') : null),
@@ -66,8 +68,12 @@ export default function HostelDetailPage() {
   }, [wishlistItems]);
 
 
+  if (isHostelLoading || isUserLoading) {
+    return <p>Loading hostel details...</p>;
+  }
+  
   if (!hostel) {
-    notFound();
+    return <p>Hostel not found.</p>;
   }
 
   const handleWishlistToggle = async () => {

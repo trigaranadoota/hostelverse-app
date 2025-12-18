@@ -4,7 +4,6 @@
 import { useState, useMemo } from 'react';
 import { HostelCard } from '@/components/hostels/hostel-card';
 import { FilterDropdown } from '@/components/hostels/filter-dropdown';
-import { hostels } from '@/lib/data';
 import type { Hostel } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Search, List, Map } from 'lucide-react';
@@ -12,6 +11,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { HostelsMap } from '@/components/hostels/hostels-map';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 
 type Filters = {
@@ -31,7 +32,12 @@ export default function HostelsPage() {
     amenities: [],
   });
 
+  const firestore = useFirestore();
+  const hostelsCollectionRef = useMemoFirebase(() => collection(firestore, 'hostels'), [firestore]);
+  const { data: hostels, isLoading: areHostelsLoading } = useCollection<Hostel>(hostelsCollectionRef);
+
   const filteredHostels = useMemo(() => {
+    if (!hostels) return [];
     return hostels.filter((hostel) => {
       const matchesSearch =
         searchTerm === '' ||
@@ -57,7 +63,7 @@ export default function HostelsPage() {
         matchesAmenities
       );
     });
-  }, [searchTerm, filters]);
+  }, [searchTerm, filters, hostels]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.24))]">
@@ -100,18 +106,19 @@ export default function HostelsPage() {
         <div className="flex-1 relative">
             <ScrollArea className={cn("h-full", viewMode !== 'list' && 'hidden')}>
                 <div className="p-4 md:p-6">
-                {filteredHostels.length > 0 ? (
+                {areHostelsLoading && <p>Loading hostels...</p>}
+                {!areHostelsLoading && filteredHostels.length > 0 ? (
                     <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredHostels.map((hostel) => (
                         <HostelCard key={hostel.id} hostel={hostel} />
                     ))}
                     </div>
-                ) : (
+                ) : !areHostelsLoading ? (
                     <div className="text-center py-16">
                     <h2 className="text-2xl font-semibold">No Hostels Found</h2>
-                    <p className="text-muted-foreground mt-2">Try adjusting your search or filters.</p>
+                    <p className="text-muted-foreground mt-2">Try adjusting your search or filters. Ensure hostels are added to your Firestore database.</p>
                     </div>
-                )}
+                ) : null}
                 </div>
             </ScrollArea>
 
