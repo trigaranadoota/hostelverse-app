@@ -234,7 +234,7 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
             hostelId: hostel.id,
             userId: user.uid,
             createdAt: serverTimestamp(),
-            imageUrl,
+            ...(imageUrl && { imageUrl }),
         };
         
         addDoc(reviewsCollectionRef, reviewData)
