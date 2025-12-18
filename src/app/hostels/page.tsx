@@ -7,8 +7,12 @@ import { FilterDropdown } from '@/components/hostels/filter-dropdown';
 import { hostels } from '@/lib/data';
 import type { Hostel } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, List, Map } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { HostelsMap } from '@/components/hostels/hostels-map';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
 
 type Filters = {
   gender: string;
@@ -16,8 +20,11 @@ type Filters = {
   amenities: string[];
 };
 
+type ViewMode = 'list' | 'map';
+
 export default function HostelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [filters, setFilters] = useState<Filters>({
     gender: 'any',
     roomSharing: 'any',
@@ -54,7 +61,7 @@ export default function HostelsPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.24))]">
-       <div className="flex-shrink-0 p-4 border-b bg-background">
+       <div className="flex-shrink-0 p-4 border-b bg-background z-10">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -68,26 +75,52 @@ export default function HostelsPage() {
             </div>
             <div className="flex items-center gap-4">
                 <FilterDropdown filters={filters} setFilters={setFilters} />
+                <div className="flex items-center gap-1 bg-muted p-1 rounded-md">
+                    <Button
+                        variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className="h-8 px-3"
+                    >
+                        <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant={viewMode === 'map' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('map')}
+                        className="h-8 px-3"
+                    >
+                        <Map className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
           </div>
        </div>
 
-       <ScrollArea className="h-full">
-            <div className="p-4 md:p-6">
-              {filteredHostels.length > 0 ? (
-                <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredHostels.map((hostel) => (
-                    <HostelCard key={hostel.id} hostel={hostel} />
-                  ))}
+        <div className="flex-1 relative">
+            <ScrollArea className={cn("h-full", viewMode !== 'list' && 'hidden')}>
+                <div className="p-4 md:p-6">
+                {filteredHostels.length > 0 ? (
+                    <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredHostels.map((hostel) => (
+                        <HostelCard key={hostel.id} hostel={hostel} />
+                    ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16">
+                    <h2 className="text-2xl font-semibold">No Hostels Found</h2>
+                    <p className="text-muted-foreground mt-2">Try adjusting your search or filters.</p>
+                    </div>
+                )}
                 </div>
-              ) : (
-                <div className="text-center py-16">
-                  <h2 className="text-2xl font-semibold">No Hostels Found</h2>
-                  <p className="text-muted-foreground mt-2">Try adjusting your search or filters.</p>
+            </ScrollArea>
+
+            {viewMode === 'map' && (
+                <div className="h-full w-full">
+                    <HostelsMap hostels={filteredHostels} />
                 </div>
-              )}
-            </div>
-        </ScrollArea>
+            )}
+        </div>
     </div>
   );
 }
