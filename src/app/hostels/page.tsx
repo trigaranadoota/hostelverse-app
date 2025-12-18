@@ -74,7 +74,7 @@ export default function HostelsPage() {
             </div>
             <div className="flex items-center gap-4">
                 <FilterDropdown filters={filters} setFilters={setFilters} />
-                <div className="bg-muted rounded-md p-1 flex">
+                <div className="bg-muted rounded-md p-1 flex md:hidden">
                     <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')}>
                         <List className="h-4 w-4" />
                         <span className="ml-2 hidden sm:inline">List</span>
@@ -113,4 +113,3 @@ export default function HostelsPage() {
     </div>
   );
 }
-
