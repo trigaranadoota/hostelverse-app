@@ -39,7 +39,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button asChild size="lg">
-                    <Link href="/login">Explore Hostels</Link>
+                    <Link href="/hostels">Explore Hostels</Link>
                   </Button>
                 </div>
               </div>
