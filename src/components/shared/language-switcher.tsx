@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -10,9 +11,11 @@ import {
 import { Globe } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
+import { useTranslation } from "@/hooks/use-translation";
 
 export function LanguageSwitcher() {
   const [isClient, setIsClient] = useState(false);
+  const { language, setLanguage, t } = useTranslation();
 
   useEffect(() => {
     setIsClient(true);
@@ -23,7 +26,7 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <Select defaultValue="en">
+    <Select value={language} onValueChange={setLanguage}>
       <SelectTrigger className="w-auto h-9 gap-2">
         <Globe className="w-4 h-4" />
         <SelectValue placeholder="Language" />

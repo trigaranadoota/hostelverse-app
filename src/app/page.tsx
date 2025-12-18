@@ -1,12 +1,17 @@
+
+'use client'
+
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Building2 } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-1');
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -18,7 +23,7 @@ export default function Home() {
         <nav className="ml-auto flex items-center gap-4 sm:gap-6">
           <LanguageSwitcher />
           <Button asChild>
-            <Link href="/login">Sign In</Link>
+            <Link href="/login">{t('signIn')}</Link>
           </Button>
         </nav>
       </header>
@@ -29,17 +34,15 @@ export default function Home() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-headline">
-                    Find Your Next Home Away From Home
+                    {t('heroTitle')}
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    Discover, compare, and book the best hostels around the
-                    world with HostelVerse. Your next adventure is just a click
-                    away.
+                    {t('heroSubtitle')}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button asChild size="lg">
-                    <Link href="/hostels">Explore Hostels</Link>
+                    <Link href="/hostels">{t('exploreHostels')}</Link>
                   </Button>
                 </div>
               </div>
@@ -57,7 +60,7 @@ export default function Home() {
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <p className="text-xs text-muted-foreground">
-          &copy; 2024 HostelVerse. All rights reserved.
+          {t('footerText')}
         </p>
       </footer>
     </div>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -28,12 +29,14 @@ import {
 } from "../ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useTranslation } from "@/hooks/use-translation";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -64,11 +67,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton
                 asChild
                 isActive={pathname.startsWith("/hostels")}
-                tooltip="Discover"
+                tooltip={t('discover')}
               >
                 <Link href="/hostels">
                   <Search />
-                  <span>Discover</span>
+                  <span>{t('discover')}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -76,11 +79,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton
                 asChild
                 isActive={pathname === "/wishlist"}
-                tooltip="Wishlist"
+                tooltip={t('wishlist')}
               >
                 <Link href="/wishlist">
                   <Heart />
-                  <span>Wishlist</span>
+                  <span>{t('wishlist')}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -88,11 +91,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton
                 asChild
                 isActive={pathname === "/profile"}
-                tooltip="Profile"
+                tooltip={t('profile')}
               >
                 <Link href="/profile">
                   <User />
-                  <span>Profile</span>
+                  <span>{t('profile')}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -128,7 +131,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
+                    <span>{t('logOut')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
