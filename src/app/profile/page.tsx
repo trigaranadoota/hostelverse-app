@@ -17,7 +17,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -32,26 +31,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from 'lucide-react';
-import { format } from "date-fns";
 import { useToast } from '@/hooks/use-toast';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { UserProfile } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { cn } from '@/lib/utils';
+import { parse, format } from 'date-fns';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   mobileNumber: z.string().optional(),
-  dateOfBirth: z.date().optional(),
+  dateOfBirth: z.string().optional(),
   preferredLanguage: z.string(),
 });
 
@@ -75,6 +66,7 @@ export default function ProfilePage() {
       firstName: '',
       lastName: '',
       mobileNumber: '',
+      dateOfBirth: '',
       preferredLanguage: 'en',
     },
   });
@@ -91,7 +83,7 @@ export default function ProfilePage() {
         firstName: userProfile.firstName || '',
         lastName: userProfile.lastName || '',
         mobileNumber: userProfile.mobileNumber || '',
-        dateOfBirth: userProfile.dateOfBirth ? new Date(userProfile.dateOfBirth) : undefined,
+        dateOfBirth: userProfile.dateOfBirth ? format(new Date(userProfile.dateOfBirth), 'dd-MM-yyyy') : '',
         preferredLanguage: userProfile.preferredLanguage || 'en',
       });
     }
@@ -101,13 +93,32 @@ export default function ProfilePage() {
     if (!user) return;
     setIsSaving(true);
     
+    let dobISO: string | undefined = undefined;
+    if (values.dateOfBirth) {
+        try {
+            const parsedDate = parse(values.dateOfBirth, 'dd-MM-yyyy', new Date());
+            if (!isNaN(parsedDate.getTime())) {
+                dobISO = parsedDate.toISOString();
+            } else {
+                form.setError("dateOfBirth", { type: "manual", message: "Invalid date format. Use DD-MM-YYYY." });
+                setIsSaving(false);
+                return;
+            }
+        } catch (e) {
+            form.setError("dateOfBirth", { type: "manual", message: "Invalid date format. Use DD-MM-YYYY." });
+            setIsSaving(false);
+            return;
+        }
+    }
+
+
     const profileData: UserProfile = {
       id: user.uid,
       email: user.email!,
       firstName: values.firstName,
       lastName: values.lastName,
       mobileNumber: values.mobileNumber,
-      dateOfBirth: values.dateOfBirth ? values.dateOfBirth.toISOString() : undefined,
+      dateOfBirth: dobISO,
       preferredLanguage: values.preferredLanguage
     };
     
@@ -197,46 +208,18 @@ export default function ProfilePage() {
                 </FormItem>
               )}
             />
-            <FormField
+             <FormField
               control={form.control}
               name="dateOfBirth"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Date of birth</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        captionLayout="dropdown-buttons"
-                        fromYear={1924}
-                        toYear={new Date().getFullYear()}
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                <FormItem>
+                  <FormLabel>Date of Birth</FormLabel>
+                  <FormControl>
+                    <Input placeholder="dd-mm-yyyy" {...field} />
+                  </FormControl>
+                   <FormDescription>
+                    Please use the DD-MM-YYYY format.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
