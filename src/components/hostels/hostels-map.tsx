@@ -1,3 +1,4 @@
+
 'use client';
 
 import 'leaflet/dist/leaflet.css';
@@ -9,19 +10,33 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
 import { Button } from '../ui/button';
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import { Skeleton } from '../ui/skeleton';
 
 interface HostelsMapProps {
   hostels: Hostel[];
 }
 
 export default function HostelsMap({ hostels }: HostelsMapProps) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Default center of the map (India) if no hostels are available
-  const mapCenter: LatLngExpression = hostels.length > 0
-    ? [hostels[0].location.lat, hostels[0].location.lng]
-    : [20.5937, 78.9629];
+  const mapCenter: LatLngExpression = useMemo(() => {
+    return hostels.length > 0
+      ? [hostels[0].location.lat, hostels[0].location.lng]
+      : [20.5937, 78.9629];
+  }, [hostels]);
+
+    if (!isClient) {
+        return <Skeleton className="w-full h-full" />;
+    }
 
     return (
-        <MapContainer center={mapCenter} zoom={12} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+        <MapContainer center={mapCenter} zoom={hostels.length > 0 ? 12 : 5} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
             <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
