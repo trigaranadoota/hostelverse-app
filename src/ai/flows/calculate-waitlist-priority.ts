@@ -105,16 +105,23 @@ function calculatePriorityScore(user: Partial<UserProfile>) {
     const MAX_DIST_POINTS = 25;
     const MAX_KM_CAP = 25;
     
-    let effectiveDistance = Math.max(0, user.distance || 0); // Ensure distance is not negative
-    effectiveDistance = Math.min(effectiveDistance, MAX_KM_CAP); // Cap distance at 25
-
+    // If distance is more than 25km, cap it at 25km
+    let effectiveDistance = (user.distance || 0) > MAX_KM_CAP ? MAX_KM_CAP : (user.distance || 0);
+    
+    // Formula: (Distance / MaxCap) * MaxPoints
+    // Since MaxCap and MaxPoints are both 25, the points equal the Km (1km = 1pt)
     let distancePoints = (effectiveDistance / MAX_KM_CAP) * MAX_DIST_POINTS;
 
 
     // --- 4. ACADEMIC SCORE (Merit) ---
     const MAX_ACADEMIC_POINTS = 20;
+    
+    // Calculate average percentage of 10th and 12th
     let averageScore = ((user.score10th || 0) + (user.score12th || 0)) / 2;
+    
+    // Normalize to 20 points
     let academicPoints = (averageScore / 100) * MAX_ACADEMIC_POINTS;
+
 
     // --- FINAL TOTAL ---
     const totalScore = incomePoints + categoryPoints + distancePoints + academicPoints;
