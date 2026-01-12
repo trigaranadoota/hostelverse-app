@@ -35,6 +35,38 @@
           "type": "string",
           "description": "User's preferred language for the application interface.",
           "enum": ["en", "es", "fr", "de"]
+        },
+        "address": {
+          "type": "string",
+          "description": "User's full address."
+        },
+        "pinCode": {
+          "type": "string",
+          "description": "User's postal code."
+        },
+        "country": {
+          "type": "string",
+          "description": "User's country."
+        },
+        "state": {
+          "type": "string",
+          "description": "User's state or province."
+        },
+        "category": {
+          "type": "string",
+          "description": "User's social category (e.g., General, OBC)."
+        },
+        "annualIncome": {
+          "type": "number",
+          "description": "User's annual income."
+        },
+        "score10th": {
+          "type": "number",
+          "description": "User's score or percentage in 10th grade."
+        },
+        "score12th": {
+          "type": "number",
+          "description": "User's score or percentage in 12th grade."
         }
       },
       "required": ["id", "email"]

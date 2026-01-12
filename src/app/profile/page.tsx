@@ -45,6 +45,14 @@ const profileSchema = z.object({
   mobileNumber: z.string().optional(),
   dateOfBirth: z.string().optional(),
   preferredLanguage: z.string(),
+  address: z.string().optional(),
+  pinCode: z.string().optional(),
+  country: z.string().optional(),
+  state: z.string().optional(),
+  category: z.string().optional(),
+  annualIncome: z.coerce.number().optional(),
+  score10th: z.coerce.number().optional(),
+  score12th: z.coerce.number().optional(),
 });
 
 export default function ProfilePage() {
@@ -69,6 +77,14 @@ export default function ProfilePage() {
       mobileNumber: '',
       dateOfBirth: '',
       preferredLanguage: 'en',
+      address: '',
+      pinCode: '',
+      country: '',
+      state: '',
+      category: '',
+      annualIncome: undefined,
+      score10th: undefined,
+      score12th: undefined,
     },
   });
 
@@ -86,6 +102,14 @@ export default function ProfilePage() {
         mobileNumber: userProfile.mobileNumber || '',
         dateOfBirth: userProfile.dateOfBirth ? format(new Date(userProfile.dateOfBirth), 'dd-MM-yyyy') : '',
         preferredLanguage: userProfile.preferredLanguage || 'en',
+        address: userProfile.address || '',
+        pinCode: userProfile.pinCode || '',
+        country: userProfile.country || '',
+        state: userProfile.state || '',
+        category: userProfile.category || '',
+        annualIncome: userProfile.annualIncome || undefined,
+        score10th: userProfile.score10th || undefined,
+        score12th: userProfile.score12th || undefined,
       });
     }
   }, [userProfile, form]);
@@ -120,7 +144,15 @@ export default function ProfilePage() {
       lastName: values.lastName,
       mobileNumber: values.mobileNumber,
       dateOfBirth: dobISO,
-      preferredLanguage: values.preferredLanguage
+      preferredLanguage: values.preferredLanguage,
+      address: values.address,
+      pinCode: values.pinCode,
+      country: values.country,
+      state: values.state,
+      category: values.category,
+      annualIncome: values.annualIncome,
+      score10th: values.score10th,
+      score12th: values.score12th,
     };
     
     if(userProfileRef) {
@@ -225,6 +257,127 @@ export default function ProfilePage() {
                 </FormItem>
               )}
             />
+             <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="123 Main St" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>State</FormLabel>
+                        <FormControl>
+                        <Input placeholder="California" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Country</FormLabel>
+                        <FormControl>
+                        <Input placeholder="USA" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="pinCode"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Pin Code</FormLabel>
+                            <FormControl>
+                            <Input placeholder="90210" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Category</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="general">General</SelectItem>
+                                <SelectItem value="obc">OBC</SelectItem>
+                                <SelectItem value="sc">SC</SelectItem>
+                                <SelectItem value="st">ST</SelectItem>
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
+
+                <FormField
+                    control={form.control}
+                    name="annualIncome"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Annual Income (INR)</FormLabel>
+                        <FormControl>
+                        <Input type="number" placeholder="500000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="score10th"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>10th Score (%)</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="95" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="score12th"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>12th Score (%)</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="92" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
             <FormField
               control={form.control}
               name="preferredLanguage"

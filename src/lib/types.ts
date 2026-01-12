@@ -81,6 +81,14 @@ export type UserProfile = {
   mobileNumber?: string;
   dateOfBirth?: string;
   preferredLanguage: string;
+  address?: string;
+  pinCode?: string;
+  country?: string;
+  state?: string;
+  category?: string;
+  annualIncome?: number;
+  score10th?: number;
+  score12th?: number;
 };
 
 export type Wishlist = {
