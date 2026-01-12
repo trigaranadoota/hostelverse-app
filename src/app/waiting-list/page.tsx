@@ -12,7 +12,7 @@ import type { Hostel, Wishlist } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, Trophy } from "lucide-react";
+import { Clock, Users, Trophy, Star, BedDouble } from "lucide-react";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { calculateWaitlistPriority, WaitlistPriorityOutput } from "@/ai/flows/calculate-waitlist-priority";
@@ -91,28 +91,37 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
                     <CardTitle className="font-headline tracking-tight mb-1">{hostel.name}</CardTitle>
                     <p className="text-sm text-muted-foreground mb-4">{hostel.address}</p>
 
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="flex flex-col items-center p-3 bg-muted rounded-lg">
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                        <div className="flex flex-col items-center p-3 bg-muted rounded-lg text-center">
                             <Trophy className="w-6 h-6 mb-1 text-primary" />
                             <span className="text-2xl font-bold">{rankingInfo?.rank || 'N/A'}</span>
                             <span className="text-xs text-muted-foreground">Your Rank</span>
                         </div>
-                         <div className="flex flex-col items-center p-3 bg-muted rounded-lg">
+                        <div className="flex flex-col items-center p-3 bg-muted rounded-lg text-center">
+                            <Star className="w-6 h-6 mb-1 text-yellow-500" />
+                            <span className="text-2xl font-bold">{rankingInfo?.score || 'N/A'}</span>
+                            <span className="text-xs text-muted-foreground">Your Points</span>
+                        </div>
+                         <div className="flex flex-col items-center p-3 bg-muted rounded-lg text-center">
+                            <BedDouble className="w-6 h-6 mb-1 text-green-600" />
                             <span className="text-2xl font-bold">{availableRooms}</span>
-                            <span className="text-xs text-muted-foreground">Available Rooms</span>
+                            <span className="text-xs text-muted-foreground">Available</span>
                         </div>
                     </div>
-                    {rankingInfo && rankingInfo.rank > availableRooms ? (
-                         <Badge variant="destructive">Waiting</Badge>
-                    ) : rankingInfo ? (
-                         <Badge className="bg-green-600">Room Available!</Badge>
-                    ) : (
-                         <Badge variant="secondary">Processing...</Badge>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                        Your priority score is <span className="font-bold">{rankingInfo?.score || '...'}</span> out of 100.
-                        There are {totalWaiters ?? '...'} people on the waiting list.
-                    </p>
+                    
+                    <div className="flex items-center gap-4">
+                        {rankingInfo && rankingInfo.rank > availableRooms ? (
+                            <Badge variant="destructive">Waiting</Badge>
+                        ) : rankingInfo ? (
+                            <Badge className="bg-green-600 hover:bg-green-700">Room Available!</Badge>
+                        ) : (
+                            <Badge variant="secondary">Processing...</Badge>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                            {totalWaiters ?? '...'} people on the waiting list.
+                        </p>
+                    </div>
+
                 </div>
             </div>
              <div className="p-6 pt-0 border-t mt-6">
@@ -172,5 +181,3 @@ export default function WaitingListPage() {
         </Card>
     );
 }
-
-    
