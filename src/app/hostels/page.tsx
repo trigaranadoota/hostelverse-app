@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { HostelCard } from '@/components/hostels/hostel-card';
 import { FilterDropdown } from '@/components/hostels/filter-dropdown';
 import type { Hostel } from '@/lib/types';
@@ -108,6 +108,11 @@ export default function HostelsPage() {
       setIsSeeding(false);
     }
   };
+  
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.24))]">
@@ -172,7 +177,7 @@ export default function HostelsPage() {
                 </div>
             </ScrollArea>
 
-            {viewMode === 'map' && (
+            {viewMode === 'map' && isClient && (
                 <div className="h-full w-full">
                     <DynamicHostelsMap hostels={filteredHostels} />
                 </div>
