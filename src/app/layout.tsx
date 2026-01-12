@@ -5,6 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { TranslationProvider } from '@/hooks/use-translation';
+import "leaflet/dist/leaflet.css";
+
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 

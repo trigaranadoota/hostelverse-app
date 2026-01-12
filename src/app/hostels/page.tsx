@@ -16,6 +16,7 @@ import { collection, writeBatch, doc } from 'firebase/firestore';
 import { Ghost } from 'lucide-react';
 import { sampleHostels } from '@/lib/seed-data';
 import { useToast } from '@/hooks/use-toast';
+import dynamic from 'next/dynamic';
 
 type Filters = {
   gender: string;
@@ -24,6 +25,12 @@ type Filters = {
 };
 
 type ViewMode = 'list' | 'map';
+
+const DynamicHostelsMap = dynamic(
+  () => import('@/components/hostels/hostels-map').then((mod) => mod.HostelsMap),
+  { ssr: false, loading: () => <p>Loading map...</p> }
+);
+
 
 export default function HostelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -103,19 +110,6 @@ export default function HostelsPage() {
     }
   };
 
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-  if (!apiKey) {
-    return (
-        <div className="flex items-center justify-center h-full">
-            <div className="p-8 bg-red-100 border border-red-400 text-red-700 rounded-lg text-center">
-                <h2 className="text-2xl font-bold mb-2">Google Maps API Key is Missing</h2>
-                <p>Please add your Google Maps API key to the `.env.local` file to display the map.</p>
-            </div>
-        </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.24))]">
        <div className="flex-shrink-0 p-4 border-b bg-background z-10">
@@ -181,7 +175,7 @@ export default function HostelsPage() {
 
             {viewMode === 'map' && (
                 <div className="h-full w-full">
-                    <HostelsMap hostels={filteredHostels} apiKey={apiKey} />
+                    <DynamicHostelsMap hostels={filteredHostels} />
                 </div>
             )}
         </div>

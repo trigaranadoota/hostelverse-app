@@ -39,6 +39,12 @@ const nextConfig: NextConfig = {
         hostname: 'maps.googleapis.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tile.openstreetmap.org',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
