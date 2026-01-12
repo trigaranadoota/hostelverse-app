@@ -7,18 +7,16 @@ import "leaflet-defaulticon-compatibility";
 
 import { Hostel } from '@/lib/types';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { LatLngExpression, Map } from 'leaflet';
+import { LatLngExpression } from 'leaflet';
 import { Button } from '../ui/button';
 import Link from 'next/link';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Skeleton } from '../ui/skeleton';
 
 interface HostelsMapProps {
   hostels: Hostel[];
 }
 
-// This component will contain the children of the map
-// and will be rendered only after the map is created.
 function MapContent({ hostels }: HostelsMapProps) {
     const map = useMap();
 
@@ -58,7 +56,12 @@ function MapContent({ hostels }: HostelsMapProps) {
 
 export default function HostelsMap({ hostels }: HostelsMapProps) {
   const [isClient, setIsClient] = useState(false);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapCenter = useMemo((): LatLngExpression => {
+    if (hostels.length > 0) {
+      return [hostels[0].location.lat, hostels[0].location.lng];
+    }
+    return [20.5937, 78.9629]; // Default center of India
+  }, [hostels]);
 
   useEffect(() => {
     setIsClient(true);
@@ -67,20 +70,16 @@ export default function HostelsMap({ hostels }: HostelsMapProps) {
   if (!isClient) {
     return <Skeleton className="w-full h-full" />;
   }
-  
-  // By setting a key that depends on the ref, we ensure MapContainer only renders once the div exists.
+
   return (
-    <div ref={mapContainerRef} style={{ height: '100%', width: '100%' }}>
-      {mapContainerRef.current && (
-        <MapContainer
-          scrollWheelZoom={false}
-          style={{ height: '100%', width: '100%' }}
-          center={[20.5937, 78.9629]} // Default center
-          zoom={5} // Default zoom
-        >
-          <MapContent hostels={hostels} />
-        </MapContainer>
-      )}
-    </div>
+    <MapContainer
+      key="hostels-map-container" // Adding a key to help React with reconciliation
+      scrollWheelZoom={false}
+      style={{ height: '100%', width: '100%' }}
+      center={mapCenter}
+      zoom={hostels.length > 0 ? 12 : 5}
+    >
+      <MapContent hostels={hostels} />
+    </MapContainer>
   );
 }
