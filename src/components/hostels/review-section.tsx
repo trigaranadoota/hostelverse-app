@@ -340,17 +340,26 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
                 )}
               />
 
-              <FormItem>
-                <FormLabel>Add a photo (optional)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    {...pictureRef}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="picture"
+                render={({ field: { value, onChange, ...fieldProps } }) => (
+                  <FormItem>
+                    <FormLabel>Add a photo (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...fieldProps}
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => {
+                          onChange(event.target.files && event.target.files);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
 
               <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
