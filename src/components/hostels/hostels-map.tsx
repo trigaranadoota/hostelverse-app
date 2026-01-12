@@ -24,7 +24,6 @@ export default function HostelsMap({ hostels }: HostelsMapProps) {
     setIsClient(true);
   }, []);
 
-  // Default center of the map (India) if no hostels are available
   const mapCenter: LatLngExpression = useMemo(() => {
     return hostels.length > 0
       ? [hostels[0].location.lat, hostels[0].location.lng]
