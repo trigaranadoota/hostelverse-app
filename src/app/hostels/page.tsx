@@ -144,7 +144,7 @@ export default function HostelsPage() {
        </div>
 
         <div className="flex-1 relative">
-            <div className={cn("absolute inset-0", viewMode === 'list' ? 'opacity-100 visible' : 'opacity-0 invisible')}>
+             <div className={cn("absolute inset-0 transition-opacity", viewMode === 'list' ? 'opacity-100 visible' : 'opacity-0 invisible')}>
                 <ScrollArea className="h-full">
                     <div className="p-4 md:p-6">
                     {areHostelsLoading && <p>Loading hostels...</p>}
@@ -169,8 +169,8 @@ export default function HostelsPage() {
                     </div>
                 </ScrollArea>
             </div>
-             <div className={cn("absolute inset-0", viewMode === 'map' ? 'opacity-100 visible' : 'opacity-0 invisible')}>
-                {viewMode === 'map' && <HostelsMap hostels={filteredHostels} />}
+            <div className={cn("absolute inset-0 transition-opacity", viewMode === 'map' ? 'opacity-100 visible' : 'opacity-0 invisible')}>
+                <HostelsMap hostels={filteredHostels} />
              </div>
         </div>
     </div>
