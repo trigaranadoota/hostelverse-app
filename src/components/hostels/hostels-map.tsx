@@ -6,10 +6,12 @@ import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility
 import "leaflet-defaulticon-compatibility";
 
 import { Hostel } from '@/lib/types';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useEffect } from 'react';
+import type { LatLngExpression } from 'leaflet';
 
 interface HostelsMapProps {
   hostels: Hostel[];
@@ -17,8 +19,20 @@ interface HostelsMapProps {
 
 const defaultCenter: [number, number] = [28.6139, 77.2090];
 
+// This component will update the map view when the hostels list changes.
+function MapUpdater({ hostels }: { hostels: Hostel[] }) {
+    const map = useMap();
+    useEffect(() => {
+        if (hostels.length > 0) {
+            const newCenter: LatLngExpression = [hostels[0].location.lat, hostels[0].location.lng];
+            map.flyTo(newCenter, 12);
+        }
+    }, [hostels, map]);
+    return null;
+}
+
 export function HostelsMap({ hostels }: HostelsMapProps) {
-    const mapCenter = hostels.length > 0 ? [hostels[0].location.lat, hostels[0].location.lng] as [number, number] : defaultCenter;
+    const mapCenter: LatLngExpression = hostels.length > 0 ? [hostels[0].location.lat, hostels[0].location.lng] : defaultCenter;
 
     return (
         <MapContainer center={mapCenter} zoom={12} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
@@ -26,6 +40,7 @@ export function HostelsMap({ hostels }: HostelsMapProps) {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
+            <MapUpdater hostels={hostels} />
             {hostels.map((hostel) => (
                 <Marker key={hostel.id} position={[hostel.location.lat, hostel.location.lng]}>
                     <Popup>
