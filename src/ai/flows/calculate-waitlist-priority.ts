@@ -105,8 +105,11 @@ function calculatePriorityScore(user: Partial<UserProfile>) {
     const MAX_DIST_POINTS = 25;
     const MAX_KM_CAP = 25;
     
-    let effectiveDistance = (user.distance || 0) > MAX_KM_CAP ? MAX_KM_CAP : (user.distance || 0);
+    let effectiveDistance = Math.max(0, user.distance || 0); // Ensure distance is not negative
+    effectiveDistance = Math.min(effectiveDistance, MAX_KM_CAP); // Cap distance at 25
+
     let distancePoints = (effectiveDistance / MAX_KM_CAP) * MAX_DIST_POINTS;
+
 
     // --- 4. ACADEMIC SCORE (Merit) ---
     const MAX_ACADEMIC_POINTS = 20;
@@ -152,7 +155,7 @@ const calculateWaitlistPriorityFlow = ai.defineFlow(
         userProfiles.push(profileDoc.data() as UserProfile);
       } else {
         // If a user on the waitlist doesn't have a profile, create a default one for calculation.
-        // This prevents the system from crashing if a profile is deleted.
+        // This prevents the system from crashing if a profile is deleted or incomplete.
         userProfiles.push({ id: userId, email: 'unknown', firstName: 'Unknown', lastName: 'User' } as UserProfile);
       }
     }

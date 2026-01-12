@@ -360,9 +360,9 @@ export default function ProfilePage() {
                     name="distance"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Home to College Distance (in km)</FormLabel>
+                        <FormLabel>Home to College/School Distance (in km)</FormLabel>
                         <FormControl>
-                        <Input type="number" placeholder="50" {...field} />
+                        <Input type="number" placeholder="20" {...field} />
                         </FormControl>
                          <FormDescription>
                             This is used to calculate your waitlist priority score.
