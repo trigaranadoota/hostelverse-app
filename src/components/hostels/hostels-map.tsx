@@ -2,82 +2,73 @@
 'use client';
 
 import { Hostel } from '@/lib/types';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { MapPin } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { GoogleMap, LoadScript, MarkerF, InfoWindowF } from '@react-google-maps/api';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import Image from 'next/image';
 
 interface HostelsMapProps {
   hostels: Hostel[];
+  apiKey: string;
 }
 
-// Simple hash function to get a consistent position for each hostel
-const simpleHash = (s: string) => {
-  let hash = 0;
-  for (let i = 0; i < s.length; i++) {
-    const char = s.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return hash;
+const containerStyle = {
+  width: '100%',
+  height: '100%',
 };
 
+// A default center, you might want to make this dynamic based on user location or hostels
+const defaultCenter = {
+  lat: 28.6139,
+  lng: 77.2090,
+};
 
-export function HostelsMap({ hostels }: HostelsMapProps) {
-    const mapImage = PlaceHolderImages.find(p => p.id === 'map-background');
+export function HostelsMap({ hostels, apiKey }: HostelsMapProps) {
+  const [activeMarker, setActiveMarker] = useState<string | null>(null);
 
-    return (
-        <div className="relative w-full h-full bg-muted overflow-hidden">
-            {mapImage && (
-                <Image
-                    src={mapImage.imageUrl}
-                    alt="Map background"
-                    fill
-                    className="object-cover opacity-30"
-                    data-ai-hint="vector map"
-                />
-            )}
-            <div className="absolute inset-0">
-                {hostels.map((hostel) => {
-                    // Use a simple hash to create pseudo-random but consistent positions
-                    const x = Math.abs(simpleHash(hostel.id + 'x')) % 90 + 5; // 5% to 95%
-                    const y = Math.abs(simpleHash(hostel.id + 'y')) % 80 + 10; // 10% to 90%
+  const handleMarkerClick = (hostelId: string) => {
+    setActiveMarker(hostelId);
+  };
+  
+  const mapCenter = hostels.length > 0 ? hostels[0].location : defaultCenter;
 
-                    return (
-                        <Popover key={hostel.id}>
-                            <PopoverTrigger asChild>
-                                <button
-                                    className="absolute transform -translate-x-1/2 -translate-y-1/2 focus:outline-none"
-                                    style={{ left: `${x}%`, top: `${y}%` }}
-                                >
-                                    <MapPin className="w-8 h-8 text-red-600 fill-red-500 transition-transform duration-200 ease-in-out hover:scale-125" />
-                                     <span className="sr-only">{hostel.name}</span>
-                                </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-64">
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold">{hostel.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{hostel.address}</p>
-                                    <Button asChild size="sm" className="w-full">
-                                        <Link href={`/hostels/${hostel.id}`}>View Details</Link>
-                                    </Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    );
-                })}
-            </div>
-             {hostels.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center p-4 bg-background/80 rounded-lg">
-                        <h3 className="text-xl font-semibold">No Hostels Found</h3>
-                        <p className="text-muted-foreground">Try adjusting your search or filters.</p>
+  return (
+    <LoadScript googleMapsApiKey={apiKey}>
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={mapCenter}
+        zoom={12}
+      >
+        {hostels.map((hostel) => (
+          <MarkerF
+            key={hostel.id}
+            position={hostel.location}
+            onClick={() => handleMarkerClick(hostel.id)}
+          >
+            {activeMarker === hostel.id && (
+              <InfoWindowF onCloseClick={() => setActiveMarker(null)}>
+                <div className="w-64 space-y-2">
+                    <div className="relative aspect-video w-full overflow-hidden rounded-md">
+                         <Image
+                            src={hostel.images[0].url}
+                            alt={hostel.images[0].alt}
+                            fill
+                            className="object-cover"
+                        />
                     </div>
+                    <h4 className="font-bold text-base">{hostel.name}</h4>
+                    <p className="text-sm text-muted-foreground">{hostel.address}</p>
+                    <Button asChild size="sm" className="w-full">
+                        <Link href={`/hostels/${hostel.id}`}>View Details</Link>
+                    </Button>
                 </div>
+              </InfoWindowF>
             )}
-        </div>
-    );
+          </MarkerF>
+        ))}
+      </GoogleMap>
+    </LoadScript>
+  );
 }
-

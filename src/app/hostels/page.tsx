@@ -12,8 +12,10 @@ import { HostelsMap } from '@/components/hostels/hostels-map';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, writeBatch, doc } from 'firebase/firestore';
 import { Ghost } from 'lucide-react';
+import { sampleHostels } from '@/lib/seed-data';
+import { useToast } from '@/hooks/use-toast';
 
 type Filters = {
   gender: string;
@@ -26,6 +28,8 @@ type ViewMode = 'list' | 'map';
 export default function HostelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [isSeeding, setIsSeeding] = useState(false);
+  const { toast } = useToast();
   const [filters, setFilters] = useState<Filters>({
     gender: 'any',
     roomSharing: 'any',
@@ -64,6 +68,53 @@ export default function HostelsPage() {
       );
     });
   }, [searchTerm, filters, hostels]);
+  
+  const handleSeedData = async () => {
+    if (!firestore) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Firestore is not initialized.",
+      });
+      return;
+    }
+    setIsSeeding(true);
+
+    try {
+      const batch = writeBatch(firestore);
+      sampleHostels.forEach(hostel => {
+        const hostelRef = doc(firestore, 'hostels', hostel.id);
+        batch.set(hostelRef, hostel);
+      });
+      await batch.commit();
+      toast({
+        title: "Success!",
+        description: "Sample hostels have been added to your database.",
+      });
+    } catch (error) {
+      console.error("Error seeding data:", error);
+      toast({
+        variant: "destructive",
+        title: "Error Seeding Data",
+        description: "Could not add sample hostels. Check the console for details.",
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+  if (!apiKey) {
+    return (
+        <div className="flex items-center justify-center h-full">
+            <div className="p-8 bg-red-100 border border-red-400 text-red-700 rounded-lg text-center">
+                <h2 className="text-2xl font-bold mb-2">Google Maps API Key is Missing</h2>
+                <p>Please add your Google Maps API key to the `.env.local` file to display the map.</p>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.24))]">
@@ -119,6 +170,9 @@ export default function HostelsPage() {
                         <Ghost className="h-12 w-12 text-muted-foreground" />
                         <h2 className="text-2xl font-semibold">No Hostels Found</h2>
                         <p className="text-muted-foreground mt-2 max-w-md">Your database is empty. Add hostels to your Firestore 'hostels' collection to see them here.</p>
+                         <Button onClick={handleSeedData} disabled={isSeeding}>
+                           {isSeeding ? 'Seeding...' : 'Seed Sample Hostels'}
+                        </Button>
                       </div>
                     </div>
                 ) : null}
@@ -127,7 +181,7 @@ export default function HostelsPage() {
 
             {viewMode === 'map' && (
                 <div className="h-full w-full">
-                    <HostelsMap hostels={filteredHostels} />
+                    <HostelsMap hostels={filteredHostels} apiKey={apiKey} />
                 </div>
             )}
         </div>
