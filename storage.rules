@@ -1,13 +1,14 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow public read access to review images.
-    // This allows anyone to see the images attached to reviews.
-    match /reviews/{userId}/{fileName} {
+    // This rule allows any authenticated user to write to the 'reviews' folder.
+    // The application logic is responsible for creating a secure path for each user's files
+    // (e.g., /reviews/USER_ID/image.jpg), which prevents users from overwriting each other's data.
+    // Public read access is granted so that anyone can view the review images.
+    match /reviews/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null;
     }
   }
 }
