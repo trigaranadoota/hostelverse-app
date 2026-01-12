@@ -195,7 +195,7 @@ export default function ProfilePage() {
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>My Profile</CardTitle>
-        <CardDescription>Update your personal information.</CardDescription>
+        <CardDescription>Update your personal information to get accurate waitlist rankings.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -266,7 +266,7 @@ export default function ProfilePage() {
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address</FormLabel>
+                    <FormLabel>Home Address</FormLabel>
                     <FormControl>
                       <Input placeholder="123 Main St" {...field} />
                     </FormControl>
@@ -347,7 +347,7 @@ export default function ProfilePage() {
                     name="annualIncome"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Annual Income (INR)</FormLabel>
+                        <FormLabel>Annual Family Income (INR)</FormLabel>
                         <FormControl>
                         <Input type="number" placeholder="500000" {...field} />
                         </FormControl>
@@ -360,10 +360,13 @@ export default function ProfilePage() {
                     name="distance"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Distance from Hostel (km)</FormLabel>
+                        <FormLabel>Home to College Distance (in km)</FormLabel>
                         <FormControl>
                         <Input type="number" placeholder="50" {...field} />
                         </FormControl>
+                         <FormDescription>
+                            This is used to calculate your waitlist priority score.
+                        </FormDescription>
                         <FormMessage />
                     </FormItem>
                     )}
@@ -431,5 +434,3 @@ export default function ProfilePage() {
     </Card>
   );
 }
-
-    

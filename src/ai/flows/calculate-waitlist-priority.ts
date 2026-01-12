@@ -10,7 +10,7 @@ import { UserProfile } from '@/lib/types';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
+import { getApps, initializeApp } from 'firebase-admin/app';
 
 const UserProfileSchema = z.object({
     id: z.string(),
@@ -56,7 +56,7 @@ function getDb() {
   return getFirestore();
 }
 
-function calculatePriorityScore(user: UserProfile) {
+function calculatePriorityScore(user: Partial<UserProfile>) {
     // --- 1. INCOME CALCULATION (Exact Tiers) ---
     let incomePoints = 0;
     const income = user.annualIncome || 0;
@@ -150,6 +150,10 @@ const calculateWaitlistPriorityFlow = ai.defineFlow(
       const profileDoc = await db.collection('users').doc(userId).collection('profile').doc(userId).get();
       if (profileDoc.exists) {
         userProfiles.push(profileDoc.data() as UserProfile);
+      } else {
+        // If a user on the waitlist doesn't have a profile, create a default one for calculation.
+        // This prevents the system from crashing if a profile is deleted.
+        userProfiles.push({ id: userId, email: 'unknown', firstName: 'Unknown', lastName: 'User' } as UserProfile);
       }
     }
     
@@ -180,5 +184,3 @@ const calculateWaitlistPriorityFlow = ai.defineFlow(
 export async function calculateWaitlistPriority(input: WaitlistPriorityInput): Promise<WaitlistPriorityOutput> {
     return calculateWaitlistPriorityFlow(input);
 }
-
-    
