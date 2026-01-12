@@ -144,7 +144,7 @@ export default function HostelsPage() {
        </div>
 
         <div className="flex-1 relative">
-            <div className={cn("h-full w-full", viewMode !== 'list' && 'hidden')}>
+            <div style={{ display: viewMode === 'list' ? 'block' : 'none', height: '100%', width: '100%' }}>
                 <ScrollArea className="h-full">
                     <div className="p-4 md:p-6">
                     {areHostelsLoading && <p>Loading hostels...</p>}
@@ -169,7 +169,7 @@ export default function HostelsPage() {
                     </div>
                 </ScrollArea>
             </div>
-            <div className={cn("h-full w-full", viewMode !== 'map' && 'hidden')}>
+             <div style={{ display: viewMode === 'map' ? 'block' : 'none', height: '100%', width: '100%' }}>
                <DynamicHostelsMap hostels={filteredHostels} />
             </div>
         </div>
