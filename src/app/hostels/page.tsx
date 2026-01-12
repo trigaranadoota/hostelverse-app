@@ -15,7 +15,7 @@ import { collection, writeBatch, doc } from 'firebase/firestore';
 import { Ghost } from 'lucide-react';
 import { sampleHostels } from '@/lib/seed-data';
 import { useToast } from '@/hooks/use-toast';
-import dynamic from 'next/dynamic';
+import { DynamicHostelsMap } from '@/components/hostels/dynamic-hostels-map';
 
 type Filters = {
   gender: string;
@@ -24,12 +24,6 @@ type Filters = {
 };
 
 type ViewMode = 'list' | 'map';
-
-const DynamicHostelsMap = dynamic(
-  () => import('@/components/hostels/hostels-map').then((mod) => mod.HostelsMap),
-  { ssr: false, loading: () => <p>Loading map...</p> }
-);
-
 
 export default function HostelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -109,11 +103,6 @@ export default function HostelsPage() {
     }
   };
   
-  const [isClient, setIsClient] = useState(false);
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.24))]">
        <div className="flex-shrink-0 p-4 border-b bg-background z-10">
@@ -177,11 +166,9 @@ export default function HostelsPage() {
                 </div>
             </ScrollArea>
 
-            {viewMode === 'map' && isClient && (
-                <div className="h-full w-full">
-                    <DynamicHostelsMap hostels={filteredHostels} />
-                </div>
-            )}
+            <div className={cn("h-full w-full", viewMode !== 'map' && 'hidden')}>
+              <DynamicHostelsMap hostels={filteredHostels} />
+            </div>
         </div>
     </div>
   );
