@@ -106,7 +106,8 @@ function calculatePriorityScore(user: Partial<UserProfile>) {
     const MAX_KM_CAP = 25;
     
     // If distance is more than 25km, cap it at 25km
-    let effectiveDistance = (user.distance || 0) > MAX_KM_CAP ? MAX_KM_CAP : (user.distance || 0);
+    const userDistance = user.distance || 0;
+    let effectiveDistance = userDistance > MAX_KM_CAP ? MAX_KM_CAP : userDistance;
     
     // Formula: (Distance / MaxCap) * MaxPoints
     // Since MaxCap and MaxPoints are both 25, the points equal the Km (1km = 1pt)
