@@ -134,8 +134,7 @@ service cloud.firestore {
      */
     match /hostels/{hostelId} {
       allow get, list: if true;
-      // CRITICAL: Cannot implement collaborative writes. The 'Hostel' entity is missing a 'members' map.
-      // TODO: Add member validation once the schema is updated with a members map (e.g., `resource.data.members[request.auth.uid] == 'admin'`).
+      // Allow any authenticated user to create a hostel.
       allow create: if isSignedIn();
       allow update: if false;
       allow delete: if false;
@@ -149,7 +148,7 @@ service cloud.firestore {
        */
       match /reviews/{reviewId} {
         allow get, list: if true;
-        allow create: if isSignedIn();
+        allow create: if creatorOwnsNewDocument();
         allow update: if isSignedIn() && resource != null && isOwner(resource.data.userId) && ownerFieldIsImmutable() && request.resource.data.hostelId == resource.data.hostelId;
         allow delete: if isSignedIn() && resource != null && isOwner(resource.data.userId);
       }
