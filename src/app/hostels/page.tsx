@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { HostelCard } from '@/components/hostels/hostel-card';
 import { FilterDropdown } from '@/components/hostels/filter-dropdown';
 import type { Hostel } from '@/lib/types';
@@ -15,7 +15,6 @@ import { collection, writeBatch, doc } from 'firebase/firestore';
 import { Ghost } from 'lucide-react';
 import { sampleHostels } from '@/lib/seed-data';
 import { useToast } from '@/hooks/use-toast';
-import { DynamicHostelsMap } from '@/components/hostels/dynamic-hostels-map';
 
 type Filters = {
   gender: string;
@@ -23,11 +22,8 @@ type Filters = {
   amenities: string[];
 };
 
-type ViewMode = 'list' | 'map';
-
 export default function HostelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [isSeeding, setIsSeeding] = useState(false);
   const { toast } = useToast();
   const [filters, setFilters] = useState<Filters>({
@@ -119,30 +115,12 @@ export default function HostelsPage() {
             </div>
             <div className="flex items-center gap-4">
                 <FilterDropdown filters={filters} setFilters={setFilters} />
-                <div className="flex items-center gap-1 bg-muted p-1 rounded-md">
-                    <Button
-                        variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('list')}
-                        className="h-8 px-3"
-                    >
-                        <List className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant={viewMode === 'map' ? 'secondary' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('map')}
-                        className="h-8 px-3"
-                    >
-                        <Map className="h-4 w-4" />
-                    </Button>
-                </div>
             </div>
           </div>
        </div>
 
         <div className="flex-1 relative">
-            <ScrollArea className={cn("h-full", viewMode !== 'list' && 'hidden')}>
+            <ScrollArea className="h-full">
                 <div className="p-4 md:p-6">
                 {areHostelsLoading && <p>Loading hostels...</p>}
                 {!areHostelsLoading && filteredHostels.length > 0 ? (
@@ -165,10 +143,6 @@ export default function HostelsPage() {
                 ) : null}
                 </div>
             </ScrollArea>
-
-            <div className={cn("h-full w-full", viewMode !== 'map' && 'hidden')}>
-              <DynamicHostelsMap hostels={filteredHostels} />
-            </div>
         </div>
     </div>
   );
