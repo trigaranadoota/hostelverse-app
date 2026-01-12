@@ -1,3 +1,4 @@
+
 'use client';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -153,10 +154,10 @@ export default function ProfilePage() {
       country: values.country,
       state: values.state,
       category: values.category,
-      annualIncome: values.annualIncome,
-      score10th: values.score10th,
-      score12th: values.score12th,
-      distance: values.distance,
+      annualIncome: values.annualIncome === undefined ? null : values.annualIncome,
+      score10th: values.score10th === undefined ? null : values.score10th,
+      score12th: values.score12th === undefined ? null : values.score12th,
+      distance: values.distance === undefined ? null : values.distance,
     };
     
     if(userProfileRef) {
@@ -434,3 +435,5 @@ export default function ProfilePage() {
     </Card>
   );
 }
+
+    

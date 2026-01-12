@@ -1,3 +1,4 @@
+
 import type { Timestamp, FieldValue } from 'firebase/firestore';
 
 export type Amenity = {
@@ -78,18 +79,18 @@ export type UserProfile = {
   firstName: string;
   lastName: string;
   email: string;
-  mobileNumber?: string;
-  dateOfBirth?: string;
+  mobileNumber?: string | null;
+  dateOfBirth?: string | null;
   preferredLanguage: string;
-  address?: string;
-  pinCode?: string;
-  country?: string;
-  state?: string;
-  category?: string;
-  annualIncome?: number;
-  score10th?: number;
-  score12th?: number;
-  distance?: number;
+  address?: string | null;
+  pinCode?: string | null;
+  country?: string | null;
+  state?: string | null;
+  category?: string | null;
+  annualIncome?: number | null;
+  score10th?: number | null;
+  score12th?: number | null;
+  distance?: number | null;
 };
 
 export type Wishlist = {
@@ -99,4 +100,5 @@ export type Wishlist = {
   createdAt: Timestamp | FieldValue;
 };
 
+    
     
