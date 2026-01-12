@@ -1,31 +1,18 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useMemo } from 'react';
 import { HostelCard } from '@/components/hostels/hostel-card';
 import { FilterDropdown } from '@/components/hostels/filter-dropdown';
 import type { Hostel } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { Search, List, Map as MapIcon } from 'lucide-react';
+import { Search, Ghost } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, writeBatch, doc } from 'firebase/firestore';
-import { Ghost } from 'lucide-react';
 import { sampleHostels } from '@/lib/seed-data';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
-
-const DynamicHostelsMap = dynamic(
-  () => import('@/components/hostels/hostels-map'),
-  { 
-    ssr: false,
-    loading: () => <Skeleton className="w-full h-full" />
-  }
-);
-
 
 type Filters = {
   gender: string;
@@ -33,12 +20,9 @@ type Filters = {
   amenities: string[];
 };
 
-type ViewMode = 'list' | 'map';
-
 export default function HostelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSeeding, setIsSeeding] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const { toast } = useToast();
   const [filters, setFilters] = useState<Filters>({
     gender: 'any',
@@ -129,49 +113,34 @@ export default function HostelsPage() {
             </div>
             <div className="flex items-center gap-4">
                 <FilterDropdown filters={filters} setFilters={setFilters} />
-                 <div className="bg-muted rounded-md p-1">
-                    <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')}>
-                        <List className="h-4 w-4" />
-                        <span className="sr-only">List View</span>
-                    </Button>
-                    <Button variant={viewMode === 'map' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('map')}>
-                        <MapIcon className="h-4 w-4" />
-                        <span className="sr-only">Map View</span>
-                    </Button>
-                </div>
             </div>
           </div>
        </div>
 
-        <div className="flex-1 relative">
-            <div className={cn("h-full w-full", viewMode !== 'list' && "absolute top-0 left-0 right-0 bottom-0 -z-10 opacity-0 invisible")}>
-                <ScrollArea className="h-full">
-                    <div className="p-4 md:p-6">
-                    {areHostelsLoading && <p>Loading hostels...</p>}
-                    {!areHostelsLoading && filteredHostels.length > 0 ? (
-                        <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredHostels.map((hostel) => (
-                            <HostelCard key={hostel.id} hostel={hostel} />
-                        ))}
-                        </div>
-                    ) : !areHostelsLoading ? (
-                        <div className="text-center py-16">
-                          <div className="flex flex-col items-center gap-4">
-                            <Ghost className="h-12 w-12 text-muted-foreground" />
-                            <h2 className="text-2xl font-semibold">No Hostels Found</h2>
-                            <p className="text-muted-foreground mt-2 max-w-md">Your database is empty. Add hostels to your Firestore 'hostels' collection to see them here.</p>
-                             <Button onClick={handleSeedData} disabled={isSeeding}>
-                               {isSeeding ? 'Seeding...' : 'Seed Sample Hostels'}
-                            </Button>
-                          </div>
-                        </div>
-                    ) : null}
+        <div className="flex-1">
+            <ScrollArea className="h-full">
+                <div className="p-4 md:p-6">
+                {areHostelsLoading && <p>Loading hostels...</p>}
+                {!areHostelsLoading && filteredHostels.length > 0 ? (
+                    <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredHostels.map((hostel) => (
+                        <HostelCard key={hostel.id} hostel={hostel} />
+                    ))}
                     </div>
-                </ScrollArea>
-            </div>
-            <div className={cn("h-full w-full", viewMode !== 'map' && "absolute top-0 left-0 right-0 bottom-0 -z-10 opacity-0 invisible")}>
-               <DynamicHostelsMap hostels={filteredHostels} />
-            </div>
+                ) : !areHostelsLoading ? (
+                    <div className="text-center py-16">
+                      <div className="flex flex-col items-center gap-4">
+                        <Ghost className="h-12 w-12 text-muted-foreground" />
+                        <h2 className="text-2xl font-semibold">No Hostels Found</h2>
+                        <p className="text-muted-foreground mt-2 max-w-md">Your database is empty. Add hostels to your Firestore 'hostels' collection to see them here.</p>
+                         <Button onClick={handleSeedData} disabled={isSeeding}>
+                           {isSeeding ? 'Seeding...' : 'Seed Sample Hostels'}
+                        </Button>
+                      </div>
+                    </div>
+                ) : null}
+                </div>
+            </ScrollArea>
         </div>
     </div>
   );
