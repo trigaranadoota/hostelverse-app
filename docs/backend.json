@@ -67,6 +67,10 @@
         "score12th": {
           "type": "number",
           "description": "User's score or percentage in 12th grade."
+        },
+        "distance": {
+          "type": "number",
+          "description": "Distance of the user's home from the hostel, in kilometers."
         }
       },
       "required": ["id", "email"]
@@ -321,3 +325,5 @@
     "reasoning": "The Firestore structure is designed to provide a secure, scalable, and easily debuggable system for HostelVerse, focusing on authorization independence and clear access patterns. We are leveraging Structural Segregation to isolate user profiles and hostel data, applying path-based ownership for user-specific data and the Membership Map pattern for collaborative data. UserProfile: User profiles are stored under `/users/{userId}/profile/{userId}` to establish clear ownership and simplify security rules. The `userId` parameter in the path directly corresponds to the authenticated user's ID, ensuring that only the user can access and modify their profile. Hostel: Hostels are stored in a flat `/hostels` collection. Reviews, Rooms are stored in subcollections. The `members` map enables collaborative authorization. Reviews: Reviews are stored in a `/hostels/{hostelId}/reviews/{reviewId}` subcollection, reflecting the 1:N relationship between Hostels and Reviews. Authorization is managed via the `userId` field in the review, ensuring only the author or hostel members can manage the review. Rooms: Rooms are stored in a `/hostels/{hostelId}/rooms/{roomId}` subcollection to represent the 1:N relationship between Hostels and Rooms. Wishlist: Wishlist items are stored under `/users/{userId}/wishlist/{wishlistId}`, clearly associating each wishlist with a user. Authorization Independence: Authorization Independence is achieved by storing the user's role directly within the document, eliminating the need for complex `get()` calls to parent documents in security rules. This approach supports atomic operations and enhances security rule debuggability. QAPs (Rules are not Filters): The structure supports secure list operations through structural segregation. Private user data is stored under `/users/{userId}`, allowing simple rules to restrict access based on the authenticated user's ID. Public hostel data in `/hostels` can have more permissive rules while still maintaining security. DBAC (Database-Based Access Control): The membership map is used for collaborative data, offering flexibility in defining roles and permissions without relying on custom claims."
   }
 }
+
+    

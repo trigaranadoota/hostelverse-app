@@ -53,6 +53,7 @@ const profileSchema = z.object({
   annualIncome: z.coerce.number().optional(),
   score10th: z.coerce.number().optional(),
   score12th: z.coerce.number().optional(),
+  distance: z.coerce.number().optional(),
 });
 
 export default function ProfilePage() {
@@ -85,6 +86,7 @@ export default function ProfilePage() {
       annualIncome: undefined,
       score10th: undefined,
       score12th: undefined,
+      distance: undefined,
     },
   });
 
@@ -110,6 +112,7 @@ export default function ProfilePage() {
         annualIncome: userProfile.annualIncome || undefined,
         score10th: userProfile.score10th || undefined,
         score12th: userProfile.score12th || undefined,
+        distance: userProfile.distance || undefined,
       });
     }
   }, [userProfile, form]);
@@ -153,6 +156,7 @@ export default function ProfilePage() {
       annualIncome: values.annualIncome,
       score10th: values.score10th,
       score12th: values.score12th,
+      distance: values.distance,
     };
     
     if(userProfileRef) {
@@ -329,6 +333,7 @@ export default function ProfilePage() {
                                 <SelectItem value="obc">OBC</SelectItem>
                                 <SelectItem value="sc">SC</SelectItem>
                                 <SelectItem value="st">ST</SelectItem>
+                                <SelectItem value="pc">Physically Challenged</SelectItem>
                             </SelectContent>
                             </Select>
                             <FormMessage />
@@ -345,6 +350,19 @@ export default function ProfilePage() {
                         <FormLabel>Annual Income (INR)</FormLabel>
                         <FormControl>
                         <Input type="number" placeholder="500000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="distance"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Distance from Hostel (km)</FormLabel>
+                        <FormControl>
+                        <Input type="number" placeholder="50" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -413,3 +431,5 @@ export default function ProfilePage() {
     </Card>
   );
 }
+
+    

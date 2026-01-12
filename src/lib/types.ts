@@ -89,6 +89,7 @@ export type UserProfile = {
   annualIncome?: number;
   score10th?: number;
   score12th?: number;
+  distance?: number;
 };
 
 export type Wishlist = {
@@ -97,3 +98,5 @@ export type Wishlist = {
   hostelId: string;
   createdAt: Timestamp | FieldValue;
 };
+
+    

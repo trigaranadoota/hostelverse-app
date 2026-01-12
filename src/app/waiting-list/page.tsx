@@ -7,20 +7,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection, query, where, orderBy, getDocs, doc } from "firebase/firestore";
+import { collection, doc } from "firebase/firestore";
 import type { Hostel, Wishlist } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users } from "lucide-react";
+import { Clock, Users, Trophy } from "lucide-react";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { Skeleton } from "@/components/ui/skeleton";
+import { calculateWaitlistPriority, WaitlistPriorityOutput } from "@/ai/flows/calculate-waitlist-priority";
 
 function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user: any }) {
     const firestore = useFirestore();
-    const [position, setPosition] = useState<number | null>(null);
-    const [totalWaiters, setTotalWaiters] = useState<number | null>(null);
     const [availableRooms, setAvailableRooms] = useState<number>(0);
+    const [rankingInfo, setRankingInfo] = useState<{rank: number, score: number} | null>(null);
+    const [totalWaiters, setTotalWaiters] = useState<number | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const hostelRef = useMemoFirebase(() => doc(firestore, 'hostels', wishlistItem.hostelId), [firestore, wishlistItem.hostelId]);
     const { data: hostel, isLoading: isHostelLoading } = useDoc<Hostel>(hostelRef);
@@ -28,20 +30,20 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
     useEffect(() => {
         if (!hostel) return;
 
-        const calculatePosition = async () => {
-            const wishlistCollectionRef = collection(firestore, `users/${user.uid}/wishlist`);
-            const q = query(
-                wishlistCollectionRef,
-                where('hostelId', '==', hostel.id),
-                orderBy('createdAt', 'asc')
-            );
-
-            const querySnapshot = await getDocs(q);
-            const allWishlistItems = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Wishlist));
-            const userIndex = allWishlistItems.findIndex(item => item.userId === user.uid);
-            
-            setPosition(userIndex !== -1 ? userIndex + 1 : null);
-            setTotalWaiters(allWishlistItems.length);
+        const getRanking = async () => {
+            setIsLoading(true);
+            try {
+                const result = await calculateWaitlistPriority({ hostelId: hostel.id });
+                const userRank = result.rankedUsers.find(rankedUser => rankedUser.userId === user.uid);
+                if (userRank) {
+                    setRankingInfo({ rank: userRank.rank, score: userRank.score });
+                }
+                setTotalWaiters(result.rankedUsers.length);
+            } catch (error) {
+                console.error("Failed to calculate waitlist priority:", error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
         const countAvailableRooms = () => {
@@ -51,12 +53,12 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
             setAvailableRooms(count);
         };
 
-        calculatePosition();
+        getRanking();
         countAvailableRooms();
 
-    }, [hostel, firestore, user.uid]);
+    }, [hostel, user.uid]);
 
-    if (isHostelLoading || position === null) {
+    if (isHostelLoading || isLoading) {
         return (
              <Card className="flex flex-col sm:flex-row gap-4 p-4">
                 <Skeleton className="w-full sm:w-48 h-32 rounded-md" />
@@ -91,22 +93,25 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
 
                     <div className="grid grid-cols-2 gap-4 mb-6">
                         <div className="flex flex-col items-center p-3 bg-muted rounded-lg">
-                            <Users className="w-6 h-6 mb-1 text-primary" />
-                            <span className="text-2xl font-bold">{position}</span>
-                            <span className="text-xs text-muted-foreground">Your Position</span>
+                            <Trophy className="w-6 h-6 mb-1 text-primary" />
+                            <span className="text-2xl font-bold">{rankingInfo?.rank || 'N/A'}</span>
+                            <span className="text-xs text-muted-foreground">Your Rank</span>
                         </div>
                          <div className="flex flex-col items-center p-3 bg-muted rounded-lg">
                             <span className="text-2xl font-bold">{availableRooms}</span>
                             <span className="text-xs text-muted-foreground">Available Rooms</span>
                         </div>
                     </div>
-                    {position !== null && position > availableRooms ? (
+                    {rankingInfo && rankingInfo.rank > availableRooms ? (
                          <Badge variant="destructive">Waiting</Badge>
-                    ) : (
+                    ) : rankingInfo ? (
                          <Badge className="bg-green-600">Room Available!</Badge>
+                    ) : (
+                         <Badge variant="secondary">Processing...</Badge>
                     )}
                     <p className="text-xs text-muted-foreground mt-2">
-                        There are {totalWaiters} people on the waiting list.
+                        Your priority score is <span className="font-bold">{rankingInfo?.score || '...'}</span> out of 100.
+                        There are {totalWaiters ?? '...'} people on the waiting list.
                     </p>
                 </div>
             </div>
@@ -167,3 +172,5 @@ export default function WaitingListPage() {
         </Card>
     );
 }
+
+    
