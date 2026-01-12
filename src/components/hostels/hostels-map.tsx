@@ -6,36 +6,34 @@ import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility
 import "leaflet-defaulticon-compatibility";
 
 import { Hostel } from '@/lib/types';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { LatLngExpression } from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { LatLngExpression, Map } from 'leaflet';
 import { Button } from '../ui/button';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Skeleton } from '../ui/skeleton';
 
 interface HostelsMapProps {
   hostels: Hostel[];
 }
 
-export default function HostelsMap({ hostels }: HostelsMapProps) {
-  const [isClient, setIsClient] = useState(false);
+// This component will contain the children of the map
+// and will be rendered only after the map is created.
+function MapContent({ hostels }: HostelsMapProps) {
+    const map = useMap();
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+    useEffect(() => {
+        if (hostels.length > 0) {
+            const bounds = hostels.map(h => [h.location.lat, h.location.lng] as [number, number]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+        } else {
+             map.setView([20.5937, 78.9629], 5);
+        }
+    }, [hostels, map]);
 
-  const mapCenter: LatLngExpression = useMemo(() => {
-    return hostels.length > 0
-      ? [hostels[0].location.lat, hostels[0].location.lng]
-      : [20.5937, 78.9629];
-  }, [hostels]);
-
-    if (!isClient) {
-        return <Skeleton className="w-full h-full" />;
-    }
 
     return (
-        <MapContainer center={mapCenter} zoom={hostels.length > 0 ? 12 : 5} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+        <>
             <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -53,6 +51,37 @@ export default function HostelsMap({ hostels }: HostelsMapProps) {
                     </Popup>
                 </Marker>
             ))}
-        </MapContainer>
+        </>
     );
 }
+
+
+export default function HostelsMap({ hostels }: HostelsMapProps) {
+  const [isClient, setIsClient] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return <Skeleton className="w-full h-full" />;
+  }
+  
+  // By setting a key that depends on the ref, we ensure MapContainer only renders once the div exists.
+  return (
+    <div ref={mapContainerRef} style={{ height: '100%', width: '100%' }}>
+      {mapContainerRef.current && (
+        <MapContainer
+          scrollWheelZoom={false}
+          style={{ height: '100%', width: '100%' }}
+          center={[20.5937, 78.9629]} // Default center
+          zoom={5} // Default zoom
+        >
+          <MapContent hostels={hostels} />
+        </MapContainer>
+      )}
+    </div>
+  );
+}
+
