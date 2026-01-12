@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { HostelCard } from '@/components/hostels/hostel-card';
 import { FilterDropdown } from '@/components/hostels/filter-dropdown';
@@ -144,7 +144,7 @@ export default function HostelsPage() {
        </div>
 
         <div className="flex-1 relative">
-            <div className={cn("h-full w-full", viewMode !== 'list' && "hidden")}>
+            <div className={cn("h-full w-full", viewMode !== 'list' && "absolute top-0 left-0 right-0 bottom-0 -z-10 opacity-0 invisible")}>
                 <ScrollArea className="h-full">
                     <div className="p-4 md:p-6">
                     {areHostelsLoading && <p>Loading hostels...</p>}
@@ -169,7 +169,7 @@ export default function HostelsPage() {
                     </div>
                 </ScrollArea>
             </div>
-            <div className={cn("h-full w-full", viewMode !== 'map' && "hidden")}>
+            <div className={cn("h-full w-full", viewMode !== 'map' && "absolute top-0 left-0 right-0 bottom-0 -z-10 opacity-0 invisible")}>
                <DynamicHostelsMap hostels={filteredHostels} />
             </div>
         </div>
