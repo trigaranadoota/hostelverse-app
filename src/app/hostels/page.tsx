@@ -8,7 +8,6 @@ import type { Hostel } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Search, List, Map } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { HostelsMap } from '@/components/hostels/hostels-map';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
