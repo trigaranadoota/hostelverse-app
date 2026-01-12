@@ -114,8 +114,11 @@ service cloud.firestore {
        * @principle Enforces strict data ownership within a user-specific subcollection.
        */
       match /wishlist/{wishlistId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        // Any user can query the wishlist collection to determine waiting list position.
+        // Item-level reads are still restricted to the owner.
+        allow list: if isSignedIn();
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId && request.resource.data.createdAt == request.time;
         allow update: if isExistingOwnerForUpdate(userId) && ownerFieldIsImmutable();
         allow delete: if isOwner(userId);
       }

@@ -193,7 +193,7 @@
     "Wishlist": {
       "title": "Wishlist",
       "type": "object",
-      "description": "Represents a user's wishlist for hostels.",
+      "description": "Represents a user's wishlist for hostels, which also functions as a waiting list.",
       "properties": {
         "id": {
           "type": "string",
@@ -206,9 +206,14 @@
         "hostelId": {
           "type": "string",
           "description": "Reference to Hostel. (Relationship: Hostel 1:N Wishlist)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the hostel was added to the wishlist. Used for waiting list order."
         }
       },
-      "required": ["id", "userId", "hostelId"]
+      "required": ["id", "userId", "hostelId", "createdAt"]
     }
   },
   "auth": {

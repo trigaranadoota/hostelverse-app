@@ -18,7 +18,7 @@ import { RoomBookingSystem } from "@/components/hostels/room-booking-system";
 import { ReviewSection } from "@/components/hostels/review-section";
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { useEffect, useState } from "react";
-import { addDoc, collection, deleteDoc, query, where, doc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, query, where, doc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -105,6 +105,7 @@ export default function HostelDetailPage() {
         const wishlistItem = {
             userId: user.uid,
             hostelId: hostel.id,
+            createdAt: serverTimestamp(),
         };
         addDoc(wishlistCollectionRef, wishlistItem)
             .then(() => {

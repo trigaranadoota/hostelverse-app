@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
-import { Building2, Heart, Search, User, LogOut } from "lucide-react";
+import { Building2, Heart, Search, User, LogOut, Clock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { useAuth, useUser } from "@/firebase";
@@ -84,6 +84,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link href="/wishlist">
                   <Heart />
                   <span>{t('wishlist')}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/waiting-list"}
+                tooltip="Waiting List"
+              >
+                <Link href="/waiting-list">
+                  <Clock />
+                  <span>Waiting List</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

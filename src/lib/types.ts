@@ -95,4 +95,5 @@ export type Wishlist = {
   id: string;
   userId: string;
   hostelId: string;
+  createdAt: Timestamp | FieldValue;
 };
