@@ -9,18 +9,21 @@ import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { collection, doc } from "firebase/firestore";
 import type { Hostel, Wishlist } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, Trophy, Star, BedDouble } from "lucide-react";
+import { Clock, Users, Trophy, Star, BedDouble, Wallet, User, Milestone, GraduationCap } from "lucide-react";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { calculateWaitlistPriority, WaitlistPriorityOutput } from "@/ai/flows/calculate-waitlist-priority";
+import { Separator } from "@/components/ui/separator";
+
+type ScoreBreakdown = WaitlistPriorityOutput['rankedUsers'][0]['scoreBreakdown'];
 
 function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user: any }) {
     const firestore = useFirestore();
     const [availableRooms, setAvailableRooms] = useState<number>(0);
-    const [rankingInfo, setRankingInfo] = useState<{rank: number, score: number} | null>(null);
+    const [rankingInfo, setRankingInfo] = useState<{rank: number, score: number, scoreBreakdown: ScoreBreakdown} | null>(null);
     const [totalWaiters, setTotalWaiters] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -36,7 +39,7 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
                 const result = await calculateWaitlistPriority({ hostelId: hostel.id });
                 const userRank = result.rankedUsers.find(rankedUser => rankedUser.userId === user.uid);
                 if (userRank) {
-                    setRankingInfo({ rank: userRank.rank, score: userRank.score });
+                    setRankingInfo({ rank: userRank.rank, score: userRank.score, scoreBreakdown: userRank.scoreBreakdown });
                 }
                 setTotalWaiters(result.rankedUsers.length);
             } catch (error) {
@@ -124,11 +127,37 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
 
                 </div>
             </div>
-             <div className="p-6 pt-0 border-t mt-6">
-                <Button asChild className="w-full mt-6">
+            {rankingInfo?.scoreBreakdown && (
+                <>
+                <Separator />
+                <div className="p-6">
+                    <h4 className="font-semibold text-md mb-4">Score Breakdown</h4>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2 text-muted-foreground"><Wallet /> Income</span>
+                            <span className="font-bold">{rankingInfo.scoreBreakdown.income} pts</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                             <span className="flex items-center gap-2 text-muted-foreground"><User /> Category</span>
+                            <span className="font-bold">{rankingInfo.scoreBreakdown.category} pts</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2 text-muted-foreground"><Milestone /> Distance</span>
+                            <span className="font-bold">{rankingInfo.scoreBreakdown.distance} pts</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="flex items-center gap-2 text-muted-foreground"><GraduationCap /> Academics</span>
+                            <span className="font-bold">{rankingInfo.scoreBreakdown.academics} pts</span>
+                        </div>
+                    </div>
+                </div>
+                </>
+            )}
+             <CardFooter className="bg-muted/50 p-4">
+                <Button asChild className="w-full">
                     <Link href={`/hostels/${hostel.id}`}>View Hostel & Book</Link>
                 </Button>
-            </div>
+            </CardFooter>
         </Card>
     );
 }

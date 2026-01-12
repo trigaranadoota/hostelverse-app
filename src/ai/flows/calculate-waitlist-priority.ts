@@ -30,16 +30,18 @@ export const WaitlistPriorityInputSchema = z.object({
 
 export type WaitlistPriorityInput = z.infer<typeof WaitlistPriorityInputSchema>;
 
+const ScoreBreakdownSchema = z.object({
+    income: z.number(),
+    category: z.number(),
+    distance: z.number(),
+    academics: z.number(),
+});
+
 const RankedUserSchema = z.object({
     userId: z.string(),
     rank: z.number(),
     score: z.number(),
-    scoreBreakdown: z.object({
-        income: z.number(),
-        category: z.number(),
-        distance: z.number(),
-        academics: z.number(),
-    })
+    scoreBreakdown: ScoreBreakdownSchema
 });
 
 export const WaitlistPriorityOutputSchema = z.object({
