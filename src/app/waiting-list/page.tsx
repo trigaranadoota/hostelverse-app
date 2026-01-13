@@ -9,7 +9,7 @@ import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { collection, doc } from "firebase/firestore";
 import type { Hostel, Wishlist, UserProfile } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Trophy, Star, BedDouble, Wallet, User, Milestone, GraduationCap } from "lucide-react";
