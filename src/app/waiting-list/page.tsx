@@ -8,71 +8,140 @@ import Link from "next/link";
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { collection, doc } from "firebase/firestore";
-import type { Hostel, Wishlist } from "@/lib/types";
+import type { Hostel, Wishlist, UserProfile } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Trophy, Star, BedDouble, Wallet, User, Milestone, GraduationCap } from "lucide-react";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { Skeleton } from "@/components/ui/skeleton";
-import { calculateWaitlistPriority, WaitlistPriorityOutput } from "@/ai/flows/calculate-waitlist-priority";
 import { Separator } from "@/components/ui/separator";
 
-type ScoreBreakdown = WaitlistPriorityOutput['rankedUsers'][0]['scoreBreakdown'];
+// Simplified calculation that can run on the client for the current user only
+function calculateCurrentUserScore(userProfile: UserProfile) {
+    // --- 1. INCOME CALCULATION (Exact Tiers) ---
+    let incomePoints = 0;
+    const income = userProfile.annualIncome || 0;
+
+    if (income <= 400000) {
+        incomePoints = 30;
+    } else if (income <= 800000) {
+        incomePoints = 25;
+    } else if (income <= 1200000) {
+        incomePoints = 20;
+    } else if (income <= 1600000) {
+        incomePoints = 15;
+    } else if (income <= 2000000) {
+        incomePoints = 10;
+    } else if (income <= 2400000) {
+        incomePoints = 5;
+    } else {
+        incomePoints = 0; // Above 24L
+    }
+
+    // --- 2. CATEGORY CALCULATION ---
+    let categoryPoints = 0;
+    const category = (userProfile.category || 'general').toLowerCase().trim(); 
+
+    switch (category) {
+        case "physically challenged":
+        case "pc": 
+            categoryPoints = 25; // Highest Priority
+            break;
+        case "sc":
+        case "st":
+        case "sc/st":
+            categoryPoints = 20;
+            break;
+        case "obc":
+            categoryPoints = 15;
+            break;
+        case "general":
+            categoryPoints = 10;
+            break;
+        default:
+            categoryPoints = 10; // Default to General if undefined
+    }
+
+    // --- 3. DISTANCE CALCULATION (Max 25km) ---
+    const MAX_DIST_POINTS = 25;
+    const MAX_KM_CAP = 25;
+    
+    const userDistance = userProfile.distance || 0;
+    let effectiveDistance = userDistance > MAX_KM_CAP ? MAX_KM_CAP : userDistance;
+    
+    let distancePoints = (effectiveDistance / MAX_KM_CAP) * MAX_DIST_POINTS;
+
+
+    // --- 4. ACADEMIC SCORE (Merit) ---
+    const MAX_ACADEMIC_POINTS = 20;
+    
+    let averageScore = ((userProfile.score10th || 0) + (userProfile.score12th || 0)) / 2;
+    
+    let academicPoints = (averageScore / 100) * MAX_ACADEMIC_POINTS;
+
+    const totalScore = incomePoints + categoryPoints + distancePoints + academicPoints;
+
+    return {
+        total: parseFloat(totalScore.toFixed(2)),
+        breakdown: {
+            income: incomePoints,
+            category: categoryPoints,
+            distance: parseFloat(distancePoints.toFixed(2)),
+            academics: parseFloat(academicPoints.toFixed(2))
+        }
+    };
+}
+
 
 function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user: any }) {
     const firestore = useFirestore();
     const [availableRooms, setAvailableRooms] = useState<number>(0);
-    const [rankingInfo, setRankingInfo] = useState<{rank: number, score: number, scoreBreakdown: ScoreBreakdown} | null>(null);
+    const [rankingInfo, setRankingInfo] = useState<{rank: string, score: number | string, scoreBreakdown?: any} | null>(null);
     const [totalWaiters, setTotalWaiters] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const hostelRef = useMemoFirebase(() => doc(firestore, 'hostels', wishlistItem.hostelId), [firestore, wishlistItem.hostelId]);
     const { data: hostel, isLoading: isHostelLoading } = useDoc<Hostel>(hostelRef);
+    
+    const userProfileRef = useMemoFirebase(() => doc(firestore, 'users', user.uid, 'profile', user.uid), [firestore, user.uid]);
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
     useEffect(() => {
-        if (!hostel || !user) return;
+        if (isHostelLoading || isProfileLoading) return;
+        setIsLoading(true);
 
-        const getRanking = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                // This call is now expected to fail gracefully due to security rules.
-                const result = await calculateWaitlistPriority({ hostelId: hostel.id });
-                if (result.rankedUsers.length > 0) {
-                    const userRank = result.rankedUsers.find(rankedUser => rankedUser.userId === user.uid);
-                    if (userRank) {
-                        setRankingInfo({ rank: userRank.rank, score: userRank.score, scoreBreakdown: userRank.scoreBreakdown });
-                    }
-                    setTotalWaiters(result.rankedUsers.length);
-                } else {
-                    // This is the expected path now.
-                    setRankingInfo(null);
-                    setTotalWaiters(0);
-                    setError("Ranking calculation is temporarily unavailable.");
-                }
-            } catch (error) {
-                console.error("Failed to calculate waitlist priority:", error);
-                setError("Could not calculate your rank.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        const countAvailableRooms = () => {
+        if(hostel) {
             const count = hostel.floors.reduce((acc, floor) => {
                 return acc + floor.rooms.filter(room => room.status === 'available').length;
             }, 0);
             setAvailableRooms(count);
-        };
+        }
 
-        getRanking();
-        countAvailableRooms();
+        if(userProfile){
+            const scoreData = calculateCurrentUserScore(userProfile);
+            setRankingInfo({
+                rank: "N/A",
+                score: scoreData.total,
+                scoreBreakdown: scoreData.breakdown
+            });
+        } else {
+             setRankingInfo({
+                rank: "N/A",
+                score: "N/A",
+            });
+        }
 
-    }, [hostel, user]);
+        // Set a generic message as ranking is disabled
+        setError("Cross-user ranking is unavailable.");
+        // We can't determine total waiters without reading all wishlist items, which is not secure.
+        setTotalWaiters(null); 
+        setIsLoading(false);
 
-    if (isHostelLoading) {
+    }, [hostel, userProfile, isHostelLoading, isProfileLoading]);
+
+    if (isHostelLoading || isProfileLoading || isLoading) {
         return (
              <Card className="flex flex-col sm:flex-row gap-4 p-4">
                 <Skeleton className="w-full sm:w-48 h-32 rounded-md" />
@@ -106,7 +175,7 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
                     <p className="text-sm text-muted-foreground mb-4">{hostel.address}</p>
                     
                     {error && (
-                         <Badge variant="destructive" className="mb-4">{error}</Badge>
+                         <Badge variant="outline" className="mb-4">{error}</Badge>
                     )}
 
                     <div className="grid grid-cols-3 gap-4 mb-6">
@@ -128,13 +197,9 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
                     </div>
                     
                      <div className="flex items-center gap-4">
-                        {rankingInfo && availableRooms > 0 && rankingInfo.rank <= availableRooms ? (
-                            <Badge className="bg-green-600 hover:bg-green-700">Room Available!</Badge>
-                        ) : (
-                            <Badge variant="destructive">Waiting</Badge>
-                        )}
+                        <Badge variant="destructive">Waiting</Badge>
                         <p className="text-xs text-muted-foreground">
-                            {totalWaiters ?? '...'} people on the waiting list.
+                            Waiting list position cannot be determined right now.
                         </p>
                     </div>
 
@@ -144,7 +209,8 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
                 <>
                 <Separator />
                 <div className="p-6">
-                    <h4 className="font-semibold text-md mb-4">Score Breakdown</h4>
+                    <h4 className="font-semibold text-md mb-4">Your Score Breakdown</h4>
+                     <p className="text-xs text-muted-foreground mb-4">This is your individual score. Your rank depends on other applicants' scores.</p>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                         <div className="flex justify-between items-center">
                             <span className="flex items-center gap-2 text-muted-foreground"><Wallet /> Income</span>
@@ -168,7 +234,7 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
             )}
              <CardFooter className="bg-muted/50 p-4">
                 <Button asChild className="w-full">
-                    <Link href={`/hostels/${hostel.id}`}>View Hostel & Book</Link>
+                    <Link href={`/hostels/${hostel.id}`}>View Hostel Details</Link>
                 </Button>
             </CardFooter>
         </Card>
@@ -202,6 +268,7 @@ export default function WaitingListPage() {
         <Card className="w-full max-w-4xl mx-auto">
             <CardHeader>
                 <CardTitle>My Waiting List</CardTitle>
+                <CardDescription>Review your score for wishlisted hostels. Your rank cannot be calculated at this time.</CardDescription>
             </CardHeader>
             <CardContent>
                 {wishlistItems && wishlistItems.length > 0 && user ? (
@@ -223,3 +290,4 @@ export default function WaitingListPage() {
         </Card>
     );
 }
+    
