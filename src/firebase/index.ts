@@ -22,10 +22,6 @@ export function initializeFirebase() {
     return getSdks(getApp());
   }
   
-  if (!firebaseConfig.apiKey) {
-    throw new Error('Firebase API key is not available in the environment.');
-  }
-
   const firebaseApp = initializeApp(firebaseConfig);
   return getSdks(firebaseApp);
 }

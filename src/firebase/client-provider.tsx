@@ -9,9 +9,9 @@ interface FirebaseClientProviderProps {
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  // initializeFirebase is now robust enough to be called multiple times
-  // and will only initialize the app once.
-  const firebaseServices = initializeFirebase();
+  // Memoize the initialization to ensure it only runs once and is safe
+  // for both server and client rendering. This prevents hydration errors.
+  const firebaseServices = useMemo(() => initializeFirebase(), []);
 
   return (
     <FirebaseProvider
