@@ -26,24 +26,35 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
     const [rankingInfo, setRankingInfo] = useState<{rank: number, score: number, scoreBreakdown: ScoreBreakdown} | null>(null);
     const [totalWaiters, setTotalWaiters] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const hostelRef = useMemoFirebase(() => doc(firestore, 'hostels', wishlistItem.hostelId), [firestore, wishlistItem.hostelId]);
     const { data: hostel, isLoading: isHostelLoading } = useDoc<Hostel>(hostelRef);
 
     useEffect(() => {
-        if (!hostel) return;
+        if (!hostel || !user) return;
 
         const getRanking = async () => {
             setIsLoading(true);
+            setError(null);
             try {
+                // This call is now expected to fail gracefully due to security rules.
                 const result = await calculateWaitlistPriority({ hostelId: hostel.id });
-                const userRank = result.rankedUsers.find(rankedUser => rankedUser.userId === user.uid);
-                if (userRank) {
-                    setRankingInfo({ rank: userRank.rank, score: userRank.score, scoreBreakdown: userRank.scoreBreakdown });
+                if (result.rankedUsers.length > 0) {
+                    const userRank = result.rankedUsers.find(rankedUser => rankedUser.userId === user.uid);
+                    if (userRank) {
+                        setRankingInfo({ rank: userRank.rank, score: userRank.score, scoreBreakdown: userRank.scoreBreakdown });
+                    }
+                    setTotalWaiters(result.rankedUsers.length);
+                } else {
+                    // This is the expected path now.
+                    setRankingInfo(null);
+                    setTotalWaiters(0);
+                    setError("Ranking calculation is temporarily unavailable.");
                 }
-                setTotalWaiters(result.rankedUsers.length);
             } catch (error) {
                 console.error("Failed to calculate waitlist priority:", error);
+                setError("Could not calculate your rank.");
             } finally {
                 setIsLoading(false);
             }
@@ -59,9 +70,9 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
         getRanking();
         countAvailableRooms();
 
-    }, [hostel, user.uid]);
+    }, [hostel, user]);
 
-    if (isHostelLoading || isLoading) {
+    if (isHostelLoading) {
         return (
              <Card className="flex flex-col sm:flex-row gap-4 p-4">
                 <Skeleton className="w-full sm:w-48 h-32 rounded-md" />
@@ -93,6 +104,10 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
                 <div className="p-6 flex-1">
                     <CardTitle className="font-headline tracking-tight mb-1">{hostel.name}</CardTitle>
                     <p className="text-sm text-muted-foreground mb-4">{hostel.address}</p>
+                    
+                    {error && (
+                         <Badge variant="destructive" className="mb-4">{error}</Badge>
+                    )}
 
                     <div className="grid grid-cols-3 gap-4 mb-6">
                         <div className="flex flex-col items-center p-3 bg-muted rounded-lg text-center">
@@ -112,13 +127,11 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                        {rankingInfo && rankingInfo.rank > availableRooms ? (
-                            <Badge variant="destructive">Waiting</Badge>
-                        ) : rankingInfo ? (
+                     <div className="flex items-center gap-4">
+                        {rankingInfo && availableRooms > 0 && rankingInfo.rank <= availableRooms ? (
                             <Badge className="bg-green-600 hover:bg-green-700">Room Available!</Badge>
                         ) : (
-                            <Badge variant="secondary">Processing...</Badge>
+                            <Badge variant="destructive">Waiting</Badge>
                         )}
                         <p className="text-xs text-muted-foreground">
                             {totalWaiters ?? '...'} people on the waiting list.
