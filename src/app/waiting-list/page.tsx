@@ -18,7 +18,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 
 // Simplified calculation that can run on the client for the current user only
-function calculateCurrentUserScore(userProfile: UserProfile) {
+function calculateCurrentUserScore(userProfile: UserProfile | null) {
+    if (!userProfile) return { total: 0, breakdown: {} };
+
     // --- 1. INCOME CALCULATION (Exact Tiers) ---
     let incomePoints = 0;
     const income = userProfile.annualIncome || 0;
@@ -98,9 +100,6 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
     const firestore = useFirestore();
     const [availableRooms, setAvailableRooms] = useState<number>(0);
     const [rankingInfo, setRankingInfo] = useState<{rank: string, score: number | string, scoreBreakdown?: any} | null>(null);
-    const [totalWaiters, setTotalWaiters] = useState<number | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     const hostelRef = useMemoFirebase(() => doc(firestore, 'hostels', wishlistItem.hostelId), [firestore, wishlistItem.hostelId]);
     const { data: hostel, isLoading: isHostelLoading } = useDoc<Hostel>(hostelRef);
@@ -110,7 +109,6 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
 
     useEffect(() => {
         if (isHostelLoading || isProfileLoading) return;
-        setIsLoading(true);
 
         if(hostel) {
             const count = hostel.floors.reduce((acc, floor) => {
@@ -119,29 +117,16 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
             setAvailableRooms(count);
         }
 
-        if(userProfile){
-            const scoreData = calculateCurrentUserScore(userProfile);
-            setRankingInfo({
-                rank: "N/A",
-                score: scoreData.total,
-                scoreBreakdown: scoreData.breakdown
-            });
-        } else {
-             setRankingInfo({
-                rank: "N/A",
-                score: "N/A",
-            });
-        }
-
-        // Set a generic message as ranking is disabled
-        setError("Cross-user ranking is unavailable.");
-        // We can't determine total waiters without reading all wishlist items, which is not secure.
-        setTotalWaiters(null); 
-        setIsLoading(false);
+        const scoreData = calculateCurrentUserScore(userProfile);
+        setRankingInfo({
+            rank: "N/A", // We can't calculate rank securely on the client
+            score: scoreData.total,
+            scoreBreakdown: scoreData.breakdown
+        });
 
     }, [hostel, userProfile, isHostelLoading, isProfileLoading]);
 
-    if (isHostelLoading || isProfileLoading || isLoading) {
+    if (isHostelLoading || isProfileLoading) {
         return (
              <Card className="flex flex-col sm:flex-row gap-4 p-4">
                 <Skeleton className="w-full sm:w-48 h-32 rounded-md" />
@@ -174,9 +159,7 @@ function WaitingListCard({ wishlistItem, user }: { wishlistItem: Wishlist, user:
                     <CardTitle className="font-headline tracking-tight mb-1">{hostel.name}</CardTitle>
                     <p className="text-sm text-muted-foreground mb-4">{hostel.address}</p>
                     
-                    {error && (
-                         <Badge variant="outline" className="mb-4">{error}</Badge>
-                    )}
+                     <Badge variant="outline" className="mb-4">Ranking across users is not available.</Badge>
 
                     <div className="grid grid-cols-3 gap-4 mb-6">
                         <div className="flex flex-col items-center p-3 bg-muted rounded-lg text-center">
@@ -290,4 +273,6 @@ export default function WaitingListPage() {
         </Card>
     );
 }
+    
+
     

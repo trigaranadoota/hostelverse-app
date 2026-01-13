@@ -55,6 +55,7 @@ service cloud.firestore {
      * Ensures that the user ID in the document matches the authenticated user's ID
      */
      function resourceIsOwnedByUser() {
+       // On create, the resource is the request.resource.data
        return request.auth.uid == request.resource.data.id;
      }
 
@@ -114,12 +115,10 @@ service cloud.firestore {
        * @principle Enforces strict data ownership within a user-specific subcollection.
        */
       match /wishlist/{wishlistId} {
-        // Any user can query the wishlist collection to determine waiting list position.
-        // Item-level reads are still restricted to the owner.
-        allow list: if isSignedIn();
-        allow get: if isOwner(userId);
+        // A user can only list and read their own wishlist items.
+        allow list, get: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.userId == userId && request.resource.data.createdAt == request.time;
-        allow update: if isExistingOwnerForUpdate(userId) && ownerFieldIsImmutable();
+        allow update: if isOwner(userId) && ownerFieldIsImmutable();
         allow delete: if isOwner(userId);
       }
     }
@@ -172,6 +171,19 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if false;
       }
+
+       /**
+       * @description Controls access to a hostel's wishlist.
+       * @path /hostels/{hostelId}/wishlist/{wishlistItemId}
+       * @deny (list) Denies listing all items on a hostel's wishlist to prevent users from seeing each other's data.
+       * @principle Enforces privacy by preventing cross-user data leakage.
+       */
+      match /wishlist/{wishlistItemId} {
+        allow list, get, create, update, delete: if false; // Deny all direct access.
+      }
     }
   }
 }
+
+
+    
