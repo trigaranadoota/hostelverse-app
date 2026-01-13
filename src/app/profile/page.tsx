@@ -84,10 +84,10 @@ export default function ProfilePage() {
       country: '',
       state: '',
       category: '',
-      annualIncome: undefined,
-      score10th: undefined,
-      score12th: undefined,
-      distance: undefined,
+      annualIncome: 0,
+      score10th: 0,
+      score12th: 0,
+      distance: 0,
     },
   });
 
@@ -110,10 +110,10 @@ export default function ProfilePage() {
         country: userProfile.country || '',
         state: userProfile.state || '',
         category: userProfile.category || '',
-        annualIncome: userProfile.annualIncome || undefined,
-        score10th: userProfile.score10th || undefined,
-        score12th: userProfile.score12th || undefined,
-        distance: userProfile.distance || undefined,
+        annualIncome: userProfile.annualIncome || 0,
+        score10th: userProfile.score10th || 0,
+        score12th: userProfile.score12th || 0,
+        distance: userProfile.distance || 0,
       });
     }
   }, [userProfile, form]);
@@ -240,7 +240,7 @@ export default function ProfilePage() {
                 <FormItem>
                   <FormLabel>Mobile Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="+1 234 567 890" {...field} />
+                    <Input placeholder="+1 234 567 890" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -253,7 +253,7 @@ export default function ProfilePage() {
                 <FormItem>
                   <FormLabel>Date of Birth</FormLabel>
                   <FormControl>
-                    <Input placeholder="dd-mm-yyyy" {...field} />
+                    <Input placeholder="dd-mm-yyyy" {...field} value={field.value ?? ''} />
                   </FormControl>
                    <FormDescription>
                     Please use the DD-MM-YYYY format.
@@ -269,7 +269,7 @@ export default function ProfilePage() {
                   <FormItem>
                     <FormLabel>Home Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="123 Main St" {...field} />
+                      <Input placeholder="123 Main St" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                     <FormItem>
                         <FormLabel>State</FormLabel>
                         <FormControl>
-                        <Input placeholder="California" {...field} />
+                        <Input placeholder="California" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -296,7 +296,7 @@ export default function ProfilePage() {
                     <FormItem>
                         <FormLabel>Country</FormLabel>
                         <FormControl>
-                        <Input placeholder="USA" {...field} />
+                        <Input placeholder="USA" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -311,7 +311,7 @@ export default function ProfilePage() {
                         <FormItem>
                             <FormLabel>Pin Code</FormLabel>
                             <FormControl>
-                            <Input placeholder="90210" {...field} />
+                            <Input placeholder="90210" {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -323,7 +323,7 @@ export default function ProfilePage() {
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel>Category</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value ?? undefined}>
                             <FormControl>
                                 <SelectTrigger>
                                 <SelectValue placeholder="Select a category" />
@@ -350,7 +350,7 @@ export default function ProfilePage() {
                     <FormItem>
                         <FormLabel>Annual Family Income (INR)</FormLabel>
                         <FormControl>
-                        <Input type="number" placeholder="500000" {...field} />
+                        <Input type="number" placeholder="500000" {...field} value={field.value ?? 0} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -363,7 +363,7 @@ export default function ProfilePage() {
                     <FormItem>
                         <FormLabel>Home to College/School Distance (in km)</FormLabel>
                         <FormControl>
-                        <Input type="number" placeholder="20" {...field} />
+                        <Input type="number" placeholder="20" {...field} value={field.value ?? 0} />
                         </FormControl>
                          <FormDescription>
                             This is used to calculate your waitlist priority score.
@@ -380,7 +380,7 @@ export default function ProfilePage() {
                         <FormItem>
                             <FormLabel>10th Score (%)</FormLabel>
                             <FormControl>
-                            <Input type="number" placeholder="95" {...field} />
+                            <Input type="number" placeholder="95" {...field} value={field.value ?? 0} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -393,7 +393,7 @@ export default function ProfilePage() {
                         <FormItem>
                             <FormLabel>12th Score (%)</FormLabel>
                             <FormControl>
-                            <Input type="number" placeholder="92" {...field} />
+                            <Input type="number" placeholder="92" {...field} value={field.value ?? 0} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -435,5 +435,3 @@ export default function ProfilePage() {
     </Card>
   );
 }
-
-    
