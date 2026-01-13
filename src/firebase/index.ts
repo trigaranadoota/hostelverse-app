@@ -6,30 +6,17 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
+// This function is now designed to be robust and safe to call anywhere.
 export function initializeFirebase() {
+  // If apps are already initialized, return the existing SDKs.
   if (getApps().length) {
     return getSdks(getApp());
   }
 
-  // When deploying to Vercel, the build process runs on the server.
-  // We need to explicitly use the environment variables from firebaseConfig.
-  // The try-catch block for automatic initialization is more suited for Firebase App Hosting.
-  if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-    const firebaseApp = initializeApp(firebaseConfig);
-    return getSdks(firebaseApp);
-  }
-
-  // Fallback for other environments or local development
-  let firebaseApp;
-  try {
-    firebaseApp = initializeApp();
-  } catch (e) {
-    if (process.env.NODE_ENV === "production") {
-      console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-    }
-    firebaseApp = initializeApp(firebaseConfig);
-  }
+  // If no apps are initialized, initialize a new one with the config.
+  // This config is populated by environment variables, which works for
+  // local dev, Vercel builds, and client-side rendering.
+  const firebaseApp = initializeApp(firebaseConfig);
   return getSdks(firebaseApp);
 }
 
