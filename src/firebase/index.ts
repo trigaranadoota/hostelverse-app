@@ -1,21 +1,21 @@
 'use client';
 
-import { firebaseConfig } from '@/firebase/config';
+import { getFirebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
-// This function is now designed to be robust and safe to call anywhere.
 export function initializeFirebase() {
-  // If apps are already initialized, return the existing SDKs.
   if (getApps().length) {
     return getSdks(getApp());
   }
+  
+  const firebaseConfig = getFirebaseConfig();
+  if (!firebaseConfig.apiKey) {
+    throw new Error('Firebase API key is not available in the environment.');
+  }
 
-  // If no apps are initialized, initialize a new one with the config.
-  // This config is populated by environment variables, which works for
-  // local dev, Vercel builds, and client-side rendering.
   const firebaseApp = initializeApp(firebaseConfig);
   return getSdks(firebaseApp);
 }
