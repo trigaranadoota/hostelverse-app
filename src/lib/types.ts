@@ -17,8 +17,8 @@ export type Review = {
   managementRating: number;
   safetyRating: number;
   createdAt: Timestamp | Date | FieldValue;
-  userDisplayName?: string;
-  userPhotoURL?: string;
+  userDisplayName: string;
+  userPhotoURL?: string | null;
   imageUrl?: string;
 };
 

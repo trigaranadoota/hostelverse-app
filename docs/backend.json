@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -134,6 +135,15 @@
           "type": "string",
           "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Review)"
         },
+        "userDisplayName": {
+            "type": "string",
+            "description": "Denormalized display name of the user who wrote the review."
+        },
+        "userPhotoURL": {
+            "type": "string",
+            "description": "Denormalized photo URL of the user who wrote the review.",
+            "format": "uri"
+        },
         "text": {
           "type": "string",
           "description": "Text content of the review."
@@ -163,6 +173,7 @@
         "id",
         "hostelId",
         "userId",
+        "userDisplayName",
         "text",
         "foodRating",
         "cleanlinessRating",

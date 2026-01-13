@@ -1,6 +1,6 @@
 
 "use client";
-import { Review, Hostel, UserProfile } from "@/lib/types";
+import { Review, Hostel } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -28,13 +28,13 @@ import {
 import { Utensils, Shield, Sparkles, UserCheck } from "lucide-react";
 import { useUser, useFirestore, useMemoFirebase, useFirebaseApp } from "@/firebase";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection, addDoc, serverTimestamp, doc, getDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { formatDistanceToNow } from 'date-fns';
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 
 
@@ -84,14 +84,14 @@ function ReviewCard({ review, isLoading }: { review: Review, isLoading?: boolean
   const overallRating = (review.foodRating + review.cleanlinessRating + review.managementRating + review.safetyRating) / 4;
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('');
+    return name?.split(' ').map(n => n[0]).join('') || 'A';
   }
 
   return (
     <div className="flex gap-4">
       <Avatar>
-        <AvatarImage src={review.userPhotoURL} alt={review.userDisplayName} />
-        <AvatarFallback>{getInitials(review.userDisplayName || 'A')}</AvatarFallback>
+        <AvatarImage src={review.userPhotoURL || undefined} alt={review.userDisplayName} />
+        <AvatarFallback>{getInitials(review.userDisplayName)}</AvatarFallback>
       </Avatar>
       <div className="flex-1 space-y-2">
         <div className="flex items-center justify-between">
@@ -134,44 +134,12 @@ function ReviewCard({ review, isLoading }: { review: Review, isLoading?: boolean
   );
 }
 
-async function fetchUserProfilesForReviews(firestore: any, reviews: Review[]): Promise<Review[]> {
-    const userIds = [...new Set(reviews.map(review => review.userId))];
-    if (userIds.length === 0) return reviews;
-    const userProfiles = new Map<string, UserProfile>();
-
-    // This is not ideal for performance as it runs N queries, but for this demo it's acceptable.
-    // In a production app, you might use a single query with an 'in' operator if the list is small,
-    // or denormalize the user's display name onto the review document itself.
-    for (const userId of userIds) {
-        try {
-            const userDocRef = doc(firestore, 'users', userId, 'profile', userId);
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-                userProfiles.set(userId, userDocSnap.data() as UserProfile);
-            }
-        } catch (error) {
-            console.error(`Failed to fetch profile for user ${userId}`, error);
-        }
-    }
-
-    return reviews.map(review => {
-        const profile = userProfiles.get(review.userId);
-        return {
-            ...review,
-            userDisplayName: profile ? `${profile.firstName} ${profile.lastName}`.trim() : 'Anonymous',
-            // In a real app, you would get the photoURL from the profile.
-            userPhotoURL: undefined, 
-        };
-    });
-}
-
 
 export function ReviewSection({ hostel }: { hostel: Hostel }) {
   const { user } = useUser();
   const firestore = useFirestore();
-  const firebaseApp = useFirebaseApp(); // Use the hook to get the app instance
+  const firebaseApp = useFirebaseApp(); 
   const { toast } = useToast();
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
 
@@ -179,15 +147,7 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
     () => firestore ? collection(firestore, `hostels/${hostel.id}/reviews`) : null,
     [firestore, hostel.id]
   );
-  const { data: rawReviews, isLoading: areReviewsLoading } = useCollection<Review>(reviewsCollectionRef);
-
-  useEffect(() => {
-    if (rawReviews && firestore) {
-      fetchUserProfilesForReviews(firestore, rawReviews).then(setReviews);
-    } else if (!areReviewsLoading) {
-      setReviews([]);
-    }
-  }, [rawReviews, firestore, areReviewsLoading]);
+  const { data: reviews, isLoading: areReviewsLoading } = useCollection<Review>(reviewsCollectionRef);
 
   const form = useForm<z.infer<typeof reviewSchema>>({
     resolver: zodResolver(reviewSchema),
@@ -234,6 +194,8 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
             hostelId: hostel.id,
             userId: user.uid,
             createdAt: serverTimestamp(),
+            userDisplayName: user.displayName || user.email || 'Anonymous',
+            userPhotoURL: user.photoURL || null,
             ...(imageUrl && { imageUrl }),
         };
         
@@ -274,7 +236,7 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
         </CardHeader>
         <CardContent className="space-y-6">
           {areReviewsLoading && Array.from({ length: 2 }).map((_, i) => <ReviewCard key={i} review={{} as Review} isLoading={true} />)}
-          {!areReviewsLoading && reviews.length > 0 ? (
+          {!areReviewsLoading && reviews && reviews.length > 0 ? (
             reviews.map((review, index) => (
               <div key={review.id}>
                 <ReviewCard review={review} />
