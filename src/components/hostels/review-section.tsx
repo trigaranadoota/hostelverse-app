@@ -1,6 +1,6 @@
 
 "use client";
-import { Review, Hostel } from "@/lib/types";
+import type { Hostel } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -26,16 +26,12 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Utensils, Shield, Sparkles, UserCheck } from "lucide-react";
-import { useUser, useFirestore, useMemoFirebase, useFirebaseApp } from "@/firebase";
-import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useUser, useSupabase, useReviews } from "@/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from "react";
 import Image from "next/image";
+import type { Review as AppReview } from "@/lib/types";
 
 
 const reviewSchema = z.object({
@@ -62,7 +58,7 @@ const ratingCategories = [
   { id: "safetyRating", label: "Safety", icon: <Shield className="h-4 w-4" /> },
 ] as const;
 
-function ReviewCard({ review, isLoading }: { review: Review, isLoading?: boolean }) {
+function ReviewCard({ review, isLoading }: { review: AppReview, isLoading?: boolean }) {
   if (isLoading) {
     return (
       <div className="flex space-x-4 animate-pulse">
@@ -87,6 +83,8 @@ function ReviewCard({ review, isLoading }: { review: Review, isLoading?: boolean
     return name?.split(' ').map(n => n[0]).join('') || 'A';
   }
 
+  const createdAt = review.createdAt instanceof Date ? review.createdAt : new Date(review.createdAt as unknown as string);
+
   return (
     <div className="flex gap-4">
       <Avatar>
@@ -98,7 +96,7 @@ function ReviewCard({ review, isLoading }: { review: Review, isLoading?: boolean
           <div>
             <p className="font-semibold">{review.userDisplayName || "Anonymous"}</p>
             <p className="text-xs text-muted-foreground">
-              {review.createdAt ? formatDistanceToNow(new Date((review.createdAt as Timestamp).seconds * 1000), { addSuffix: true }) : 'Just now'}
+              {formatDistanceToNow(createdAt, { addSuffix: true })}
             </p>
           </div>
           <StarRating rating={overallRating} readOnly size={16} />
@@ -106,11 +104,11 @@ function ReviewCard({ review, isLoading }: { review: Review, isLoading?: boolean
         <p className="text-sm">{review.text}</p>
 
         {review.imageUrl && (
-            <div className="relative aspect-video w-full max-w-sm mt-2 overflow-hidden rounded-lg">
-                <Image src={review.imageUrl} alt="Review image" fill className="object-cover" />
-            </div>
+          <div className="relative aspect-video w-full max-w-sm mt-2 overflow-hidden rounded-lg">
+            <Image src={review.imageUrl} alt="Review image" fill className="object-cover" />
+          </div>
         )}
-        
+
         <div className="grid grid-cols-1 gap-y-1 text-sm pt-2">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground flex items-center gap-2">{ratingCategories[0].icon} {ratingCategories[0].label}</span>
@@ -137,17 +135,11 @@ function ReviewCard({ review, isLoading }: { review: Review, isLoading?: boolean
 
 export function ReviewSection({ hostel }: { hostel: Hostel }) {
   const { user } = useUser();
-  const firestore = useFirestore();
-  const firebaseApp = useFirebaseApp(); 
+  const supabase = useSupabase();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
-  const reviewsCollectionRef = useMemoFirebase(
-    () => firestore ? collection(firestore, `hostels/${hostel.id}/reviews`) : null,
-    [firestore, hostel.id]
-  );
-  const { data: reviews, isLoading: areReviewsLoading } = useCollection<Review>(reviewsCollectionRef);
+  const { data: reviews, isLoading: areReviewsLoading, refetch } = useReviews(hostel.id);
 
   const form = useForm<z.infer<typeof reviewSchema>>({
     resolver: zodResolver(reviewSchema),
@@ -161,67 +153,69 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
     },
   });
 
-  const pictureRef = form.register("picture");
-
   async function onSubmit(values: z.infer<typeof reviewSchema>) {
-    if (!user || !reviewsCollectionRef || !firebaseApp) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "You must be logged in and the app must be initialized to submit a review."
-        });
-        return;
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be logged in to submit a review."
+      });
+      return;
     }
     setIsSubmitting(true);
 
     try {
-        let imageUrl: string | undefined = undefined;
-        const imageFile = values.picture?.[0];
+      let imageUrl: string | null = null;
+      const imageFile = values.picture?.[0];
 
-        if (imageFile) {
-            const storage = getStorage(firebaseApp);
-            const imageRef = storageRef(storage, `reviews/${user.uid}/${Date.now()}_${imageFile.name}`);
-            const uploadResult = await uploadBytes(imageRef, imageFile);
-            imageUrl = await getDownloadURL(uploadResult.ref);
+      // Upload image to Supabase Storage if provided
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('review-images')
+          .upload(fileName, imageFile);
+
+        if (uploadError) {
+          console.error('Image upload error:', uploadError);
+          // Continue without image if upload fails
+        } else {
+          const { data: urlData } = supabase.storage
+            .from('review-images')
+            .getPublicUrl(fileName);
+          imageUrl = urlData.publicUrl;
         }
+      }
 
-        const reviewData = {
-            text: values.text,
-            foodRating: values.foodRating,
-            cleanlinessRating: values.cleanlinessRating,
-            managementRating: values.managementRating,
-            safetyRating: values.safetyRating,
-            hostelId: hostel.id,
-            userId: user.uid,
-            createdAt: serverTimestamp(),
-            userDisplayName: user.displayName || user.email || 'Anonymous',
-            userPhotoURL: user.photoURL || null,
-            ...(imageUrl && { imageUrl }),
-        };
-        
-        addDoc(reviewsCollectionRef, reviewData)
-            .then(() => {
-                toast({ title: "Review submitted successfully!" });
-                form.reset();
-            })
-            .catch((e) => {
-                const permissionError = new FirestorePermissionError({
-                    path: reviewsCollectionRef.path,
-                    operation: 'create',
-                    requestResourceData: reviewData
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
+      // Insert review into Supabase
+      const { error: insertError } = await supabase.from('reviews').insert({
+        hostel_id: hostel.id,
+        user_id: user.id,
+        text: values.text,
+        food_rating: values.foodRating,
+        cleanliness_rating: values.cleanlinessRating,
+        management_rating: values.managementRating,
+        safety_rating: values.safetyRating,
+        user_display_name: user.user_metadata?.full_name || user.email || 'Anonymous',
+        user_photo_url: user.user_metadata?.avatar_url || null,
+        image_url: imageUrl,
+      } as never);
 
-    } catch (error) {
-        console.error("Review submission failed:", error);
-        toast({
-            variant: "destructive",
-            title: "Submission Failed",
-            description: "Could not upload image or submit your review. Please try again.",
-        });
+      if (insertError) throw insertError;
+
+      toast({ title: "Review submitted successfully!" });
+      form.reset();
+      refetch();
+    } catch (error: any) {
+      console.error("Review submission failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: error.message || "Could not submit your review. Please try again.",
+      });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -235,7 +229,7 @@ export function ReviewSection({ hostel }: { hostel: Hostel }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {areReviewsLoading && Array.from({ length: 2 }).map((_, i) => <ReviewCard key={i} review={{} as Review} isLoading={true} />)}
+          {areReviewsLoading && Array.from({ length: 2 }).map((_, i) => <ReviewCard key={i} review={{} as AppReview} isLoading={true} />)}
           {!areReviewsLoading && reviews && reviews.length > 0 ? (
             reviews.map((review, index) => (
               <div key={review.id}>

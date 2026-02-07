@@ -14,16 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/firebase';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  sendSignInLinkToEmail,
-  isSignInWithEmailLink,
-  signInWithEmailLink,
-} from 'firebase/auth';
+import { useSupabase, useUser } from '@/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Building2 } from 'lucide-react';
@@ -45,115 +36,122 @@ export default function LoginPage() {
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [emailLink, setEmailLink] = useState('');
-  const auth = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const supabase = useSupabase();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
 
+  // Redirect if already logged in
   useEffect(() => {
-    const completeSignIn = async () => {
-      if (auth && isSignInWithEmailLink(auth, window.location.href)) {
-        let emailForSignIn = window.localStorage.getItem('emailForSignIn');
-        if (!emailForSignIn) {
-          // User opened the link on a different device. To prevent session fixation
-          // attacks, ask the user to provide the email again.
-          emailForSignIn = window.prompt('Please provide your email for confirmation');
-        }
-        if (emailForSignIn) {
-          try {
-            await signInWithEmailLink(auth, emailForSignIn, window.location.href);
-            window.localStorage.removeItem('emailForSignIn');
-            toast({ title: "Signed in successfully!" });
-            router.push('/hostels');
-          } catch (error: any) {
-            toast({
-              variant: "destructive",
-              title: "Sign-in failed.",
-              description: error.message,
-            });
-          }
-        }
-      }
-    };
-    completeSignIn();
-  }, [auth, router, toast]);
+    if (!isUserLoading && user) {
+      router.push('/hostels');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) return;
+    setIsLoading(true);
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        // If user doesn't exist and it's the demo email, try to sign up
+        if (error.message.includes('Invalid login credentials') && email === 'abc@gmail.com') {
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+          });
+
+          if (signUpError) throw signUpError;
+
+          toast({ title: 'Demo account created! Please check email to verify or sign in again.' });
+          return;
+        }
+        throw error;
+      }
+
       toast({ title: 'Signed in successfully!' });
       router.push('/hostels');
     } catch (error: any) {
-      // Auto-register demo user if not found
-      if ((error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') && email === 'abc@gmail.com') {
-        try {
-          await createUserWithEmailAndPassword(auth, email, password);
-          toast({ title: 'Demo account created and signed in!' });
-          router.push('/hostels');
-          return;
-        } catch (createError) {
-          console.error("Failed to auto-create demo user", createError);
-        }
-      }
-
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
         description: error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) return;
+    setIsLoading(true);
+
     try {
-      await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
-      toast({ title: 'Account created successfully!' });
-      router.push('/hostels');
+      const { error } = await supabase.auth.signUp({
+        email: signUpEmail,
+        password: signUpPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Account created!',
+        description: 'Please check your email to verify your account.'
+      });
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
         description: error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    if (!auth) return;
-    const provider = new GoogleAuthProvider();
+    setIsLoading(true);
+
     try {
-      await signInWithPopup(auth, provider);
-      toast({ title: 'Signed in with Google successfully!' });
-      router.push('/hostels');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/hostels`,
+        },
+      });
+
+      if (error) throw error;
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Google Sign-In Failed',
         description: error.message,
       });
+      setIsLoading(false);
     }
   };
 
   const handleEmailLinkSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) return;
-
-    const actionCodeSettings = {
-      // URL you want to redirect back to. The domain (www.example.com) must be
-      // in the authorized domains list in the Firebase Console.
-      url: window.location.href, // Redirect back to the login page to complete sign-in
-      handleCodeInApp: true,
-    };
+    setIsLoading(true);
 
     try {
-      await sendSignInLinkToEmail(auth, emailLink, actionCodeSettings);
-      // The link was successfully sent. Inform the user.
-      // Save the email locally so you don't need to ask the user for it again
-      // if they open the link on the same device.
-      window.localStorage.setItem('emailForSignIn', emailLink);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: emailLink,
+        options: {
+          emailRedirectTo: `${window.location.origin}/hostels`,
+        },
+      });
+
+      if (error) throw error;
+
       toast({
         title: 'Check your email',
         description: `A sign-in link has been sent to ${emailLink}.`,
@@ -164,8 +162,18 @@ export default function LoginPage() {
         title: 'Could not send sign-in link',
         description: error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isUserLoading) {
+    return (
+      <div className="w-full max-w-md flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md">
@@ -201,6 +209,7 @@ export default function LoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -211,14 +220,15 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  Sign In
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing in...' : 'Sign In'}
                 </Button>
               </form>
               <Separator className="my-4" />
-              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
                 <GoogleIcon className="mr-2 h-5 w-5" />
                 Sign in with Google
               </Button>
@@ -244,6 +254,7 @@ export default function LoginPage() {
                     required
                     value={signUpEmail}
                     onChange={(e) => setSignUpEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -254,14 +265,15 @@ export default function LoginPage() {
                     required
                     value={signUpPassword}
                     onChange={(e) => setSignUpPassword(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  Create Account
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Creating account...' : 'Create Account'}
                 </Button>
               </form>
               <Separator className="my-4" />
-              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
                 <GoogleIcon className="mr-2 h-5 w-5" />
                 Sign up with Google
               </Button>
@@ -287,10 +299,11 @@ export default function LoginPage() {
                     required
                     value={emailLink}
                     onChange={(e) => setEmailLink(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  Send Sign-In Link
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Sending...' : 'Send Sign-In Link'}
                 </Button>
               </form>
             </CardContent>

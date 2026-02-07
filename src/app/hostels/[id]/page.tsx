@@ -16,40 +16,21 @@ import { Button } from "@/components/ui/button";
 import { AmenitiesDisplay } from "@/components/hostels/amenities-display";
 import { RoomBookingSystem } from "@/components/hostels/room-booking-system";
 import { ReviewSection } from "@/components/hostels/review-section";
-import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
-import { useEffect, useState } from "react";
-import { addDoc, collection, deleteDoc, query, where, doc, serverTimestamp } from "firebase/firestore";
+import { useUser, useHostel, useWishlist } from "@/supabase";
+import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
-import { useCollection } from "@/firebase/firestore/use-collection";
-import { useDoc } from "@/firebase/firestore/use-doc";
-import type { Wishlist, Hostel } from "@/lib/types";
 
 export default function HostelDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [wishlistDocId, setWishlistDocId] = useState<string | null>(null);
 
-  const hostelRef = useMemoFirebase(() => (id ? doc(firestore, 'hostels', id) : null), [firestore, id]);
-  const { data: hostel, isLoading: isHostelLoading, error: hostelError } = useDoc<Hostel>(hostelRef);
+  const { data: hostel, isLoading: isHostelLoading } = useHostel(id);
+  const { isInWishlist, addToWishlist, removeFromWishlist, isLoading: isWishlistLoading } = useWishlist();
 
-  const wishlistCollectionRef = useMemoFirebase(
-    () => (user ? collection(firestore, 'users', user.uid, 'wishlist') : null),
-    [firestore, user]
-  );
-  
-  const userWishlistQuery = useMemoFirebase(
-    () => (wishlistCollectionRef && id ? query(wishlistCollectionRef, where('hostelId', '==', id)) : null),
-    [wishlistCollectionRef, id]
-  );
-
-  const { data: wishlistItems, isLoading: isWishlistLoading } = useCollection<Wishlist>(userWishlistQuery);
+  const isWishlisted = id ? isInWishlist(id) : false;
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -57,68 +38,39 @@ export default function HostelDetailPage() {
     }
   }, [isUserLoading, user, router]);
 
-  useEffect(() => {
-    if (wishlistItems && wishlistItems.length > 0) {
-      setIsWishlisted(true);
-      setWishlistDocId(wishlistItems[0].id);
-    } else {
-      setIsWishlisted(false);
-      setWishlistDocId(null);
-    }
-  }, [wishlistItems]);
-
 
   if (isHostelLoading || isUserLoading) {
     return <p>Loading hostel details...</p>;
   }
-  
+
   if (!hostel) {
     return <p>Hostel not found.</p>;
   }
 
   const handleWishlistToggle = async () => {
-    if (!user || !wishlistCollectionRef) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "You must be logged in to manage your wishlist.",
-        });
-        return;
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "You must be logged in to manage your wishlist.",
+      });
+      return;
     }
 
-    if (isWishlisted && wishlistDocId) {
-        // Remove from wishlist
-        const docRef = doc(wishlistCollectionRef, wishlistDocId);
-        deleteDoc(docRef)
-            .then(() => {
-                toast({ title: "Removed from wishlist." });
-            })
-            .catch(e => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'delete',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
-    } else {
-        // Add to wishlist
-        const wishlistItem = {
-            userId: user.uid,
-            hostelId: hostel.id,
-            createdAt: serverTimestamp(),
-        };
-        addDoc(wishlistCollectionRef, wishlistItem)
-            .then(() => {
-                toast({ title: "Added to wishlist!" });
-            })
-            .catch(e => {
-                const permissionError = new FirestorePermissionError({
-                    path: wishlistCollectionRef.path,
-                    operation: 'create',
-                    requestResourceData: wishlistItem,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(hostel.id);
+        toast({ title: "Removed from wishlist." });
+      } else {
+        await addToWishlist(hostel.id);
+        toast({ title: "Added to wishlist!" });
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not update wishlist.",
+      });
     }
   };
 
@@ -149,7 +101,7 @@ export default function HostelDetailPage() {
                 </Badge>
               )}
               {!hostel.verification.ai && !hostel.verification.human && (
-                 <Badge variant="destructive" className="gap-1.5 pl-2 pr-3">
+                <Badge variant="destructive" className="gap-1.5 pl-2 pr-3">
                   <ShieldAlert className="h-4 w-4" />
                   Not Verified
                 </Badge>
@@ -189,25 +141,25 @@ export default function HostelDetailPage() {
       {/* Details Grid */}
       <section className="grid md:grid-cols-3 gap-8 items-start">
         <div className="md:col-span-2 space-y-8">
-            <RoomBookingSystem hostel={hostel} />
+          <RoomBookingSystem hostel={hostel} />
         </div>
         <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Fee Structure</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                    <p className="flex justify-between"><span>Monthly Rent:</span> <span className="font-semibold">₹{hostel.feeStructure.rent.toLocaleString()}</span></p>
-                    <p className="flex justify-between"><span>Security Deposit:</span> <span className="font-semibold">₹{hostel.feeStructure.deposit.toLocaleString()}</span></p>
-                     <p className="flex justify-between"><span>Registration Fee:</span> <span className="font-semibold">₹{hostel.feeStructure.registration.fee.toLocaleString()}</span></p>
-                </CardContent>
-            </Card>
-            <AmenitiesDisplay amenities={hostel.amenities} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Fee Structure</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="flex justify-between"><span>Monthly Rent:</span> <span className="font-semibold">₹{hostel.feeStructure.rent.toLocaleString()}</span></p>
+              <p className="flex justify-between"><span>Security Deposit:</span> <span className="font-semibold">₹{hostel.feeStructure.deposit.toLocaleString()}</span></p>
+              <p className="flex justify-between"><span>Registration Fee:</span> <span className="font-semibold">₹{hostel.feeStructure.registration.fee.toLocaleString()}</span></p>
+            </CardContent>
+          </Card>
+          <AmenitiesDisplay amenities={hostel.amenities} />
         </div>
       </section>
 
-       {/* Reviews Section */}
-       <section>
+      {/* Reviews Section */}
+      <section>
         <ReviewSection hostel={hostel} />
       </section>
 

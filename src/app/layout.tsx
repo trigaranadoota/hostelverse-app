@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { SupabaseProvider } from '@/supabase/provider';
 import { TranslationProvider } from '@/hooks/use-translation';
 
 
@@ -29,12 +29,13 @@ export default function RootLayout({
       </head>
       <body className={cn("min-h-screen bg-background font-body antialiased", inter.variable)} suppressHydrationWarning>
         <TranslationProvider>
-          <FirebaseClientProvider>
+          <SupabaseProvider>
             {children}
             <Toaster />
-          </FirebaseClientProvider>
+          </SupabaseProvider>
         </TranslationProvider>
       </body>
     </html>
   );
 }
+

@@ -2,26 +2,20 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart } from "lucide-react";
-import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
-import { useCollection } from "@/firebase/firestore/use-collection";
-import { collection, doc } from "firebase/firestore";
-import { Wishlist, Hostel } from "@/lib/types";
+import { useUser, useWishlist, useHostel } from "@/supabase";
 import { HostelCard } from "@/components/hostels/hostel-card";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
-import { useDoc } from "@/firebase/firestore/use-doc";
+import { useEffect } from "react";
 
 function WishlistedHostelCard({ hostelId }: { hostelId: string }) {
-  const firestore = useFirestore();
-  const hostelRef = useMemoFirebase(() => doc(firestore, 'hostels', hostelId), [firestore, hostelId]);
-  const { data: hostel, isLoading } = useDoc<Hostel>(hostelRef);
+  const { data: hostel, isLoading } = useHostel(hostelId);
 
   if (isLoading) {
-    return <div>Loading hostel...</div>; // Or a skeleton loader
+    return <div className="animate-pulse bg-muted rounded-lg h-64"></div>;
   }
 
   if (!hostel) {
-    return null; // Or some fallback UI
+    return null;
   }
 
   return <HostelCard hostel={hostel} />;
@@ -29,14 +23,9 @@ function WishlistedHostelCard({ hostelId }: { hostelId: string }) {
 
 export default function WishlistPage() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
 
-  const wishlistCollectionRef = useMemoFirebase(
-    () => (user ? collection(firestore, `users/${user.uid}/wishlist`) : null),
-    [firestore, user]
-  );
-  const { data: wishlistItems, isLoading: isWishlistLoading } = useCollection<Wishlist>(wishlistCollectionRef);
+  const { data: wishlistItems, isLoading: isWishlistLoading } = useWishlist();
 
   useEffect(() => {
     if (!isUserLoading && !user) {

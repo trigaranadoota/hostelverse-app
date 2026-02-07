@@ -1,9 +1,8 @@
 
 'use client';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useProfile } from '@/supabase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,10 +33,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import { UserProfile } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { parse, format } from 'date-fns';
 
 const profileSchema = z.object({
@@ -60,16 +55,10 @@ const profileSchema = z.object({
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
-  const userProfileRef = useMemoFirebase(
-    () => (user ? doc(firestore, 'users', user.uid, 'profile', user.uid) : null),
-    [firestore, user]
-  );
-  
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading, updateProfile } = useProfile();
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -121,75 +110,65 @@ export default function ProfilePage() {
   const onSubmit = async (values: z.infer<typeof profileSchema>) => {
     if (!user) return;
     setIsSaving(true);
-    
+
     let dobISO: string | undefined = undefined;
     if (values.dateOfBirth) {
-        try {
-            const parsedDate = parse(values.dateOfBirth, 'dd-MM-yyyy', new Date());
-            if (!isNaN(parsedDate.getTime())) {
-                dobISO = parsedDate.toISOString();
-            } else {
-                form.setError("dateOfBirth", { type: "manual", message: "Invalid date format. Use DD-MM-YYYY." });
-                setIsSaving(false);
-                return;
-            }
-        } catch (e) {
-            form.setError("dateOfBirth", { type: "manual", message: "Invalid date format. Use DD-MM-YYYY." });
-            setIsSaving(false);
-            return;
+      try {
+        const parsedDate = parse(values.dateOfBirth, 'dd-MM-yyyy', new Date());
+        if (!isNaN(parsedDate.getTime())) {
+          dobISO = parsedDate.toISOString();
+        } else {
+          form.setError("dateOfBirth", { type: "manual", message: "Invalid date format. Use DD-MM-YYYY." });
+          setIsSaving(false);
+          return;
         }
-    }
-
-
-    const profileData: UserProfile = {
-      id: user.uid,
-      email: user.email!,
-      firstName: values.firstName,
-      lastName: values.lastName,
-      mobileNumber: values.mobileNumber,
-      dateOfBirth: dobISO,
-      preferredLanguage: values.preferredLanguage,
-      address: values.address,
-      pinCode: values.pinCode,
-      country: values.country,
-      state: values.state,
-      category: values.category,
-      annualIncome: values.annualIncome === undefined ? null : values.annualIncome,
-      score10th: values.score10th === undefined ? null : values.score10th,
-      score12th: values.score12th === undefined ? null : values.score12th,
-      distance: values.distance === undefined ? null : values.distance,
-    };
-    
-    if(userProfileRef) {
-      setDoc(userProfileRef, profileData, { merge: true })
-      .then(() => {
-        toast({
-          title: 'Profile updated!',
-          description: 'Your profile has been successfully updated.',
-        });
-      })
-      .catch((e) => {
-         const permissionError = new FirestorePermissionError({
-          path: userProfileRef.path,
-          operation: 'update',
-          requestResourceData: profileData,
-        });
-
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
+      } catch (e) {
+        form.setError("dateOfBirth", { type: "manual", message: "Invalid date format. Use DD-MM-YYYY." });
         setIsSaving(false);
-      });
+        return;
+      }
     }
 
+    try {
+      await updateProfile({
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: user.email || '',
+        mobileNumber: values.mobileNumber || null,
+        dateOfBirth: dobISO || null,
+        preferredLanguage: values.preferredLanguage,
+        address: values.address || null,
+        pinCode: values.pinCode || null,
+        country: values.country || null,
+        state: values.state || null,
+        category: values.category || null,
+        annualIncome: values.annualIncome === undefined ? null : values.annualIncome,
+        score10th: values.score10th === undefined ? null : values.score10th,
+        score12th: values.score12th === undefined ? null : values.score12th,
+        distance: values.distance === undefined ? null : values.distance,
+      });
+
+      toast({
+        title: 'Profile updated!',
+        description: 'Your profile has been successfully updated.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error updating profile',
+        description: error.message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
-  
+
   if (isUserLoading || isProfileLoading) {
     return <p>Loading profile...</p>;
   }
 
   if (!user) {
-    return null; 
+    return null;
   }
 
   return (
@@ -246,7 +225,7 @@ export default function ProfilePage() {
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="dateOfBirth"
               render={({ field }) => (
@@ -255,151 +234,151 @@ export default function ProfilePage() {
                   <FormControl>
                     <Input placeholder="dd-mm-yyyy" {...field} value={field.value ?? ''} />
                   </FormControl>
-                   <FormDescription>
+                  <FormDescription>
                     Please use the DD-MM-YYYY format.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Home Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123 Main St" {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <FormField
                 control={form.control}
-                name="address"
+                name="state"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Home Address</FormLabel>
+                    <FormLabel>State</FormLabel>
                     <FormControl>
-                      <Input placeholder="123 Main St" {...field} value={field.value ?? ''} />
+                      <Input placeholder="California" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <FormField
-                    control={form.control}
-                    name="state"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>State</FormLabel>
-                        <FormControl>
-                        <Input placeholder="California" {...field} value={field.value ?? ''} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="country"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Country</FormLabel>
-                        <FormControl>
-                        <Input placeholder="USA" {...field} value={field.value ?? ''} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <FormField
-                        control={form.control}
-                        name="pinCode"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Pin Code</FormLabel>
-                            <FormControl>
-                            <Input placeholder="90210" {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="category"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Category</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value ?? undefined}>
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="general">General</SelectItem>
-                                <SelectItem value="obc">OBC</SelectItem>
-                                <SelectItem value="sc">SC</SelectItem>
-                                <SelectItem value="st">ST</SelectItem>
-                                <SelectItem value="pc">Physically Challenged</SelectItem>
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                </div>
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <FormControl>
+                      <Input placeholder="USA" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="pinCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pin Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="90210" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value ?? undefined}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="obc">OBC</SelectItem>
+                        <SelectItem value="sc">SC</SelectItem>
+                        <SelectItem value="st">ST</SelectItem>
+                        <SelectItem value="pc">Physically Challenged</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                <FormField
-                    control={form.control}
-                    name="annualIncome"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Annual Family Income (INR)</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="500000" {...field} value={field.value ?? 0} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="distance"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Home to College/School Distance (in km)</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="20" {...field} value={field.value ?? 0} />
-                        </FormControl>
-                         <FormDescription>
-                            This is used to calculate your waitlist priority score.
-                        </FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <FormField
-                        control={form.control}
-                        name="score10th"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>10th Score (%)</FormLabel>
-                            <FormControl>
-                            <Input type="number" placeholder="95" {...field} value={field.value ?? 0} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="score12th"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>12th Score (%)</FormLabel>
-                            <FormControl>
-                            <Input type="number" placeholder="92" {...field} value={field.value ?? 0} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                </div>
+            <FormField
+              control={form.control}
+              name="annualIncome"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Annual Family Income (INR)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="500000" {...field} value={field.value ?? 0} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="distance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Home to College/School Distance (in km)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="20" {...field} value={field.value ?? 0} />
+                  </FormControl>
+                  <FormDescription>
+                    This is used to calculate your waitlist priority score.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="score10th"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>10th Score (%)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="95" {...field} value={field.value ?? 0} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="score12th"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>12th Score (%)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="92" {...field} value={field.value ?? 0} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="preferredLanguage"
