@@ -2,7 +2,7 @@ import { Hostel } from './types';
 
 export const sampleHostels: Hostel[] = [
   {
-    id: 'hostel-1',
+    id: '6445b23d-0805-4752-a5e2-63f538350160',
     name: 'The Wanderer\'s Nook',
     address: '123 Adventure Ave, Mountain View, CA',
     contact: '555-1234',
@@ -55,7 +55,7 @@ export const sampleHostels: Hostel[] = [
     roomSharing: 'multiple',
   },
   {
-    id: 'hostel-2',
+    id: 'ac603522-7935-4309-b687-39b0362f6027',
     name: 'Serene Stays',
     address: '456 Tranquil Lane, Lakeside, ON',
     contact: '555-5678',
@@ -114,7 +114,7 @@ export const sampleHostels: Hostel[] = [
     roomSharing: 'single',
   },
   {
-    id: 'hostel-3',
+    id: 'd9f0c2a5-4818-4560-9177-333036402421',
     name: 'Urban Hive',
     address: '789 City Center Plaza, New York, NY',
     contact: '555-9101',
