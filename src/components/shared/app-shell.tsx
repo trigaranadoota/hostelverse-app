@@ -176,7 +176,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </DropdownMenu>
             ) : (
               <div className="flex gap-2">
-                <Button variant="ghost" asChild>
+                <Button variant="default" asChild className="bg-primary text-white hover:bg-primary/90">
                   <Link href="/login">Sign In</Link>
                 </Button>
               </div>

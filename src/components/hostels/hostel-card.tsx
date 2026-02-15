@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { ShieldCheck, ShieldAlert } from "lucide-react";
 import { Button } from "../ui/button";
+import { useUser } from "@/supabase";
 
 interface HostelCardProps {
   hostel: Hostel;
@@ -12,10 +13,13 @@ interface HostelCardProps {
 
 export function HostelCard({ hostel }: HostelCardProps) {
   const isVerified = hostel.verification.ai && hostel.verification.human;
+  const { user } = useUser();
+
+  const detailsLink = user ? `/hostels/${hostel.id}` : "/login";
 
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-lg">
-      <Link href={`/hostels/${hostel.id}`} className="block">
+      <Link href={detailsLink} className="block">
         <div className="relative">
           <Image
             src={hostel.images[0].url}
@@ -32,7 +36,7 @@ export function HostelCard({ hostel }: HostelCardProps) {
                 AI Verified
               </Badge>
             )}
-             {hostel.verification.human && (
+            {hostel.verification.human && (
               <Badge variant="secondary" className="gap-1 pl-2 pr-3 bg-green-100 text-green-800">
                 <ShieldCheck className="h-4 w-4" />
                 Human Verified
@@ -49,7 +53,7 @@ export function HostelCard({ hostel }: HostelCardProps) {
       </Link>
       <div className="p-6 pt-0">
         <Button asChild className="w-full">
-          <Link href={`/hostels/${hostel.id}`}>View Details</Link>
+          <Link href={detailsLink}>View Details</Link>
         </Button>
       </div>
     </Card>
