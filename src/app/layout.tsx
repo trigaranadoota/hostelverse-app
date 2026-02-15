@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { SupabaseProvider } from '@/supabase/provider';
 import { TranslationProvider } from '@/hooks/use-translation';
+import { SplashWrapper } from '@/components/shared/splash-wrapper';
 
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -45,7 +46,9 @@ export default function RootLayout({
       <body className={cn("min-h-screen bg-background font-body antialiased", inter.variable)} suppressHydrationWarning>
         <TranslationProvider>
           <SupabaseProvider>
-            {children}
+            <SplashWrapper>
+              {children}
+            </SplashWrapper>
             <Toaster />
           </SupabaseProvider>
         </TranslationProvider>
