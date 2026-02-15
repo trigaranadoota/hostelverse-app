@@ -14,9 +14,9 @@ export const metadata: Metadata = {
   title: 'HostelVerse',
   description: 'Find your next home away from home.',
   icons: {
-    icon: '/logo.png',
-    shortcut: '/logo.png',
-    apple: '/logo.png',
+    icon: '/hf-logo.jpg',
+    shortcut: '/hf-logo.jpg',
+    apple: '/hf-logo.jpg',
   },
 };
 
