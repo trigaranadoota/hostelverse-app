@@ -13,7 +13,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
-import { Building2, Heart, Search, User, LogOut, Clock } from "lucide-react";
+import { Heart, Search, User, LogOut, Clock } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { useUser, useSupabase } from "@/supabase";
@@ -83,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarContent className="p-2">
           <SidebarHeader className="p-2">
             <Link href="/" className="flex items-center gap-2">
-              <Building2 className="w-6 h-6 text-primary" />
+              <Image src="/logo.png" alt="Logo" width={24} height={24} className="rounded-sm" />
               <span className="text-lg font-semibold font-headline text-sidebar-foreground">
                 HostelVerse
               </span>

@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSupabase, useUser } from '@/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Building2 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
@@ -179,7 +179,7 @@ export default function LoginPage() {
     <div className="w-full max-w-md">
       <div className="flex flex-col items-center justify-center mb-6">
         <Link href="/" className="flex items-center justify-center">
-          <Building2 className="h-8 w-8 text-primary" />
+          <Image src="/logo.png" alt="Logo" width={32} height={32} />
         </Link>
         <h1 className="text-2xl font-bold tracking-tight mt-2 font-headline">Welcome to HostelVerse</h1>
         <p className="text-muted-foreground">Sign in to find your next stay</p>
