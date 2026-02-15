@@ -10,7 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, ShieldAlert, Heart } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Heart, ChevronLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AmenitiesDisplay } from "@/components/hostels/amenities-display";
@@ -76,7 +76,17 @@ export default function HostelDetailPage() {
 
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 pb-12">
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        className="mb-2 -ml-2 gap-2 text-muted-foreground hover:text-foreground hover:bg-transparent p-0 h-auto"
+        onClick={() => router.push('/hostels')}
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back to Dashboard
+      </Button>
+
       {/* Header Section */}
       <section>
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
