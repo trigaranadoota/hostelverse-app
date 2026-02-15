@@ -195,7 +195,7 @@ export default function HostelsPage() {
               <Button
                 variant={viewMode === 'map' ? 'secondary' : 'ghost'}
                 size="icon"
-                onClick={() => setViewMode('map')}
+                onClick={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
                 aria-label="Map View"
               >
                 <Map className="h-5 w-5" />
