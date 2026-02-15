@@ -152,6 +152,7 @@ export default function ProfilePage() {
         title: 'Profile updated!',
         description: 'Your profile has been successfully updated.',
       });
+      router.push('/hostels');
     } catch (error: any) {
       toast({
         variant: 'destructive',

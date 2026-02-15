@@ -46,7 +46,7 @@ export default function LoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.push('/hostels');
+      router.push('/profile');
     }
   }, [user, isUserLoading, router]);
 
@@ -77,7 +77,7 @@ export default function LoginPage() {
       }
 
       toast({ title: 'Signed in successfully!' });
-      router.push('/hostels');
+      router.push('/profile');
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -123,7 +123,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/hostels`,
+          redirectTo: `${window.location.origin}/auth/callback?next=/profile`,
         },
       });
 
@@ -146,7 +146,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email: emailLink,
         options: {
-          emailRedirectTo: `${window.location.origin}/hostels`,
+          emailRedirectTo: `${window.location.origin}/profile`,
         },
       });
 
