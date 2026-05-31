@@ -6,7 +6,7 @@ import { HostelCard } from '@/components/hostels/hostel-card';
 import { FilterDropdown } from '@/components/hostels/filter-dropdown';
 import type { Hostel } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { Search, Ghost, List, Map } from 'lucide-react';
+import { Search, Ghost, List, Map, Database } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { useHostels, useSupabase } from '@/supabase';
@@ -182,6 +182,15 @@ export default function HostelsPage() {
             />
           </div>
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={handleSeedData}
+              disabled={isSeeding}
+              className="flex items-center gap-2"
+            >
+              <Database className="h-4 w-4" />
+              {isSeeding ? 'Seeding...' : 'Seed Sample Hostels'}
+            </Button>
             <FilterDropdown filters={filters} setFilters={setFilters} />
             <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
               <Button
